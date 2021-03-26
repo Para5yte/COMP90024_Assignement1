@@ -196,7 +196,7 @@ def main():
         # return sentiment score
         # tweet_text = tweet['value']['properties']['text']
 
-    print("process", my_rank, "number of tweets this process went through", number_of_tweets)
+    # print("process", my_rank, "number of tweets this process went through", number_of_tweets)
 
     if my_rank != 0:
 
@@ -217,6 +217,7 @@ def main():
 
             # print("process 0 receives message from process", proc_id, ":", message)
         f = open("result.txt", "x")
+        f.write("process", my_rank, "number of tweets this process went through", number_of_tweets, "\n")
         f.write("--- %s seconds ---" % (time.time() - start_time))
         #print("--- %s seconds ---" % (time.time() - start_time))
 
