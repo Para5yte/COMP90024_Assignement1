@@ -153,8 +153,8 @@ def main():
 
 
     # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
-    # tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
-    tweets = get_json_object("bigTwitter.json")  # Reads the twitter data file
+    tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
+    # tweets = get_json_object("bigTwitter.json")  # Reads the twitter data file
 
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
@@ -196,7 +196,7 @@ def main():
         # return sentiment score
         # tweet_text = tweet['value']['properties']['text']
 
-    # print("process", my_rank, "number of tweets this process went through", number_of_tweets)
+    print("process", my_rank, "number of tweets this process went through", number_of_tweets)
 
     if my_rank != 0:
 
@@ -215,11 +215,10 @@ def main():
         # for cell in cells:
             # print("number of tweets in", cell, cells[cell].num_tweet)
 
-            # print("process 0 receives message from process", proc_id, ":", message)
         with open("Output.txt", "w") as text_file:
-            print("process", my_rank, "number of tweets this process went through", number_of_tweets, file=text_file)
+            print("number of processes", processors, file=text_file)
             print("--- %s seconds ---" % (time.time() - start_time), file=text_file)
-        #print("--- %s seconds ---" % (time.time() - start_time))
+        print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == '__main__':
