@@ -51,7 +51,7 @@ def get_json_object(file):
         path to the json file
     :return: loaded json object
     """
-    with open(file, encoding='utf-8') as json_file:
+    with open(os.path.realpath(file), encoding='utf-8') as json_file:
         return json.load(json_file)
 
 
@@ -153,8 +153,8 @@ def main():
 
 
     # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
-    # tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
-    tweets = get_json_object('bigTwitter.json')  # Reads the twitter data file
+    tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
+    # tweets = get_json_object('bigTwitter.json')  # Reads the twitter data file
 
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
