@@ -1,12 +1,11 @@
 #!/bin/bash
 
 #SBATCH --partition=snowy
-#SBATCH --nodes=1
-#SBATCH --
+#SBATCH --ntasks=4
 
 module load foss/2019b
 module load python/3.7.4
 module load numpy/1.18.0-python-3.7.4
 pip install --user shapely
 
-srun -n 1 python3 main.py
+srun -n 4 python3 main.py

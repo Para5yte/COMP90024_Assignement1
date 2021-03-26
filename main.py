@@ -216,8 +216,9 @@ def main():
             # print("number of tweets in", cell, cells[cell].num_tweet)
 
             # print("process 0 receives message from process", proc_id, ":", message)
-
-        print("--- %s seconds ---" % (time.time() - start_time))
+        f = open("result.txt", "x")
+        f.write("--- %s seconds ---" % (time.time() - start_time))
+        #print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == '__main__':
