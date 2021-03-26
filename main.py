@@ -216,9 +216,9 @@ def main():
             # print("number of tweets in", cell, cells[cell].num_tweet)
 
             # print("process 0 receives message from process", proc_id, ":", message)
-        f = open("result.txt", "w")
-        f.write("process", my_rank, "number of tweets this process went through", number_of_tweets, "\n")
-        f.write("--- %s seconds ---" % (time.time() - start_time))
+        with open("Output.txt", "w") as text_file:
+            print("process", my_rank, "number of tweets this process went through", number_of_tweets, file=text_file)
+            print("--- %s seconds ---" % (time.time() - start_time), file=text_file)
         #print("--- %s seconds ---" % (time.time() - start_time))
 
 
