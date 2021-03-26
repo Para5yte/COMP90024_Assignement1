@@ -1,2 +1,4 @@
 number of processes 2
 --- 2.0485260486602783 seconds ---
+number of processes 2
+--- 1.7942063808441162 seconds ---

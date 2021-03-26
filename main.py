@@ -215,7 +215,7 @@ def main():
         # for cell in cells:
             # print("number of tweets in", cell, cells[cell].num_tweet)
 
-        with open("Output.txt", "w") as text_file:
+        with open("Output.txt", "a") as text_file:
             print("number of processes", processors, file=text_file)
             print("--- %s seconds ---" % (time.time() - start_time), file=text_file)
         print("--- %s seconds ---" % (time.time() - start_time))
