@@ -217,8 +217,9 @@ def main():
 
         with open("Output.txt", "a") as text_file:
             print("number of processes", processors, file=text_file)
-            print("--- %s seconds ---" % (time.time() - start_time), file=text_file)
-        print("--- %s seconds ---" % (time.time() - start_time))
+            time_taken = time.time() - start_time
+            print("--- %s seconds ---" % time_taken, file=text_file)
+        print("--- %s seconds ---" % time_taken)
 
 
 if __name__ == '__main__':
