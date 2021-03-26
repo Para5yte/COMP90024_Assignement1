@@ -154,7 +154,7 @@ def main():
 
     # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
     # tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
-    tweets = get_json_object('bigTwitter.json')  # Reads the twitter data file
+    tweets = get_json_object("bigTwitter.json")  # Reads the twitter data file
 
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
