@@ -106,9 +106,9 @@ def main():
     # start
     start_time = time.time()
 
-    comm = MPI.COMM_WORLD
-    my_rank = comm.Get_rank()       # gets the process_id
-    processors = comm.Get_size()    # how many processors where initied
+    comm = MPI.COMM_WORLD           # initialise MPI
+    my_rank = comm.Get_rank()       # gets the rank of current process
+    processors = comm.Get_size()    # how many processors where allocated
 
 
     # TODO - less prioity
@@ -120,6 +120,22 @@ def main():
 
     # cells infomation of this process (key, object) -> ("A1", cell)
     cells = {}
+
+    """
+    Block of code below uses broadcasting as a method to read all give json files
+    then distribute them among all processes, however during testing it was found that 
+    the program runs faster if you read the json file by it self
+    Will delete this bottom block for assignment just for learning purpose
+    """
+    # TODO delete this block of code
+    # if my_rank == 0:
+    #     word_dictionary = get_sentiment_dictionary('AFINN.txt')
+    #     melb_grid = get_json_object('melbGrid.json')
+    # else:
+    #     word_dictionary = None
+    #     melb_grid = None
+    # word_dictionary = comm.bcast(word_dictionary, root=0)
+    # melb_grid = comm.bcast(melb_grid, root=0)
 
     word_dictionary = get_sentiment_dictionary('AFINN.txt')
 
@@ -134,8 +150,11 @@ def main():
         # cells.append(temp_cell)
         cells[temp_id] = temp_cell
 
+
+
     # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
-    tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
+    # tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
+    tweets = get_json_object('bigTwitter.json')  # Reads the twitter data file
 
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
@@ -193,8 +212,8 @@ def main():
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
 
-        for cell in cells:
-            print("number of tweets in", cell, cells[cell].num_tweet)
+        # for cell in cells:
+            # print("number of tweets in", cell, cells[cell].num_tweet)
 
             # print("process 0 receives message from process", proc_id, ":", message)
 
