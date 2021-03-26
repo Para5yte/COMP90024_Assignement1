@@ -79,6 +79,7 @@ def get_sentiment_dictionary(file):
             # this code below only works if we assume the text file will be indented by "word" \t "score"
             # (key, val) = line.split('\t', 1)
             temp[key] = int(val)
+
     return temp
 
 
@@ -106,24 +107,25 @@ def main():
     start_time = time.time()
 
     comm = MPI.COMM_WORLD
-    my_rank = comm.Get_rank()
-    processors = comm.Get_size()
+    my_rank = comm.Get_rank()       # gets the process_id
+    processors = comm.Get_size()    # how many processors where initied
 
-    # TODO
-    # will need to have a way to check nodes as well
-    #
+
+    # TODO - less prioity
+    # will need to have a way to check nodes as well - less
     # for dual node processes
-    # create a cell {} for each process
+
     # get roll of json file then irritate through
-    # tweets[num_rows % num_process * (rank - 1):num_rows % num_process * Rank]
     # return cells{} to master process and add values together
 
+    # cells infomation of this process (key, object) -> ("A1", cell)
     cells = {}
 
     word_dictionary = get_sentiment_dictionary('AFINN.txt')
 
     melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
 
+    # will read melbourne grid json and append into cell dictionary
     for feature in melb_grid['features']:
         temp_id = feature["properties"]["id"]
         temp_cell = Cell(feature["properties"]["id"])
@@ -132,8 +134,8 @@ def main():
         # cells.append(temp_cell)
         cells[temp_id] = temp_cell
 
-    tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
-    # tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
+    # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
+    tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
 
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
@@ -142,7 +144,6 @@ def main():
     # TODO
     # currently this will round up the number
     # therefore if we have 19 tweets but 8 processors only 6 of them will do work
-    #
     num_tweets = math.ceil(total_tweets / processors)
 
     tweets = tweets["rows"][num_tweets*my_rank:num_tweets * (my_rank + 1)]
@@ -155,9 +156,8 @@ def main():
         number_of_tweets += 1
         # print("process: ", my_rank, tweet['value']["properties"]["text"])
         # return cell id
-        # TODO
-        # the below block of code to be a function which returns which cell the tweet was located in
 
+        # the below block of code to be a function which returns which cell the tweet was located in
         for cell in cells:
             polygon = cells[cell].polygon
             if tweet_location.within(polygon):
@@ -168,23 +168,24 @@ def main():
 
             # elif tweet_location.touches(polygon):
             # TODO
+            # how to decide where the tweet is if it interacts with another cell
             # print(tweet_location.intersects(polygon))
             # print(tweet_location.touches(polygon))
             # print("check overlap ", cell.id)
 
+        # TODO
         # return sentiment score
         # tweet_text = tweet['value']['properties']['text']
 
     print("process", my_rank, "number of tweets this process went through", number_of_tweets)
 
     if my_rank != 0:
-        message = "hello from" + str(my_rank)
+
         comm.send(cells, dest=0)
     else:
-        print("--- %s seconds ---" % (time.time() - start_time))
+
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
-
             # TODO
             # create a function for the below block of code
             # the block of code below will add all the returned vale from other process
@@ -196,6 +197,8 @@ def main():
             print("number of tweets in", cell, cells[cell].num_tweet)
 
             # print("process 0 receives message from process", proc_id, ":", message)
+
+        print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == '__main__':
