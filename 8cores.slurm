@@ -2,7 +2,8 @@
 
 # 1 node, 8 tasks per node = 8 cores
 #SBATCH --partition=snowy
-#SBATCH --ntasks=8
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
 
 # load required modules
 module load foss/2019b
