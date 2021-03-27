@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 1 node, 8 tasks per node = 8 cores
+# 8 tasks, 8 tasks per node = 8 cores
 #SBATCH --partition=snowy
 #SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=8
