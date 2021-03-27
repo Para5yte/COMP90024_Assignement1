@@ -2,7 +2,7 @@
 
 # 1 node, 8 tasks per node = 8 cores
 #SBATCH --partition=snowy
-#SBATCH --nodes=1
+#SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=8
 
 # load required modules
