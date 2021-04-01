@@ -1,6 +1,6 @@
-# i made a change here
-
-# Press Shift+F10 to execute it or replace it with your code.
+# COMP90024 - Cluster and Cloud Computing Assignment 1
+# Takemitsu Yamanaka 757038
+# Barbara Alvarez
 
 import json
 import numpy as np
@@ -81,19 +81,6 @@ def get_sentiment_dictionary(file):
             temp[key] = int(val)
 
     return temp
-
-def get_repeated_cells():
-    count = {}
-    for s in check_string:
-        if s in count:
-            count[s] += 1
-        else:
-            count[s] = 1
-
-    for key in count:
-        if count[key] > 1:
-            print
-            key, count[key]
 
 
 def get_tweet_cell_location(tweet_location, cells):
@@ -200,7 +187,7 @@ def main(argv):
 
     """
 
-    # cells infomation of this process (key, object) -> ("A1", cell)
+    # cells information of this process (key, object) -> ("A1", cell)
     cells = {}
 
     # will read melbourne grid json and append into cell dictionary
@@ -232,6 +219,8 @@ def main(argv):
         # get cell id in which the tweet occurred
         tweet_location = Point(tweet['value']['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
+        if cell_id is None:
+            continue
         cells[cell_id].num_tweet += 1
 
         # TODO
