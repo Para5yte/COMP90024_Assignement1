@@ -12,4 +12,4 @@ module load numpy/1.18.0-python-3.7.4
 pip install --user shapely
 
 # launch python code
-srun -n 8 python3 main.py
+srun -n 8 python3 main.py "smallTwitter.json"

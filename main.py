@@ -3,11 +3,11 @@
 # Press Shift+F10 to execute it or replace it with your code.
 
 import json
-import multiprocessing as mp
 import numpy as np
 import time
 import math
 import os
+import sys
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 
@@ -90,35 +90,22 @@ def get_tweet_sentiment_score(tweet_text, word_dictionary):
     print(5)
 
 
-# import sys
-#
-# print('Length of list:', len(sys.argv))
-# print(sys.arv)
-
-
-def main():
+def main(argv):
     """ main function
 
     :return:
     """
 
-    # start
+    # start the timer
     start_time = time.time()
 
     comm = MPI.COMM_WORLD           # initialise MPI
     my_rank = comm.Get_rank()       # gets the rank of current process
     processors = comm.Get_size()    # how many processors where allocated
 
-
-    # TODO - less prioity
-    # will need to have a way to check nodes as well - less
-    # for dual node processes
-
-    # get roll of json file then irritate through
-    # return cells{} to master process and add values together
-
-    # cells infomation of this process (key, object) -> ("A1", cell)
-    cells = {}
+    # get the input twitter json file
+    inputfile = argv[1]
+    tweets = get_json_object(inputfile)
 
     """
     Block of code below uses broadcasting as a method to read all give json files
@@ -140,6 +127,9 @@ def main():
 
     melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
 
+    # cells infomation of this process (key, object) -> ("A1", cell)
+    cells = {}
+
     # will read melbourne grid json and append into cell dictionary
     for feature in melb_grid['features']:
         temp_id = feature["properties"]["id"]
@@ -148,12 +138,6 @@ def main():
         temp_cell.polygon = Polygon(temp_array[0])
         # cells.append(temp_cell)
         cells[temp_id] = temp_cell
-
-
-
-    # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
-    tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
-    # tweets = get_json_object("bigTwitter.json")  # Reads the twitter data file
 
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
@@ -214,7 +198,7 @@ def main():
         # for cell in cells:
             # print("number of tweets in", cell, cells[cell].num_tweet)
 
-        with open("Output.txt", "a") as text_file:
+        with open("result.txt", "a") as text_file:
             print("number of processes", processors, file=text_file)
             time_taken = time.time() - start_time
             print("--- %s seconds ---" % time_taken, file=text_file)
@@ -222,4 +206,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
