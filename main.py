@@ -235,13 +235,13 @@ def main(argv):
 
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
-            # TODO less pior
-            # create a function for the below block of code
+            # TODO less prior to make the below code a function
             # the block of code below will add all the returned vale from other process
             for cell in cell_info:
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
 
+        # TODO less prior, to make the below code a function
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script
         with open("result2.txt", "w") as text_file:
