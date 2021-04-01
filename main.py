@@ -225,14 +225,12 @@ def main(argv):
 
     number_of_tweets = 0
     for tweet in tweets:
-        tweet_location = Point(tweet['value']['geometry']['coordinates'])
-        # print(tweet_location)
-        # print("process: ", my_rank)
 
         # TODO delete below line as it's for testing
         number_of_tweets += 1
 
         # get cell id in which the tweet occurred
+        tweet_location = Point(tweet['value']['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
         cells[cell_id].num_tweet += 1
 
