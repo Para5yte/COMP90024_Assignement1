@@ -1,6 +1,6 @@
 # COMP90024 - Cluster and Cloud Computing Assignment 1
 # Takemitsu Yamanaka 757038
-# Barbara Alvarez
+# Barbara Alvarez    1017615
 
 import json
 import numpy as np
