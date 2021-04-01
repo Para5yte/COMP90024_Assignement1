@@ -10,6 +10,7 @@ import os
 import sys
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
+from collections import Counter
 
 
 class Cell:
@@ -81,9 +82,77 @@ def get_sentiment_dictionary(file):
 
     return temp
 
+def get_repeated_cells():
+    count = {}
+    for s in check_string:
+        if s in count:
+            count[s] += 1
+        else:
+            count[s] = 1
+
+    for key in count:
+        if count[key] > 1:
+            print
+            key, count[key]
+
 
 def get_tweet_cell_location(tweet_location, cells):
-    print(6)
+    """ get the cell id of the location where the tweet occurred
+
+
+    :param tweet_location: Point(x, y)
+        Shapely Point of x and y coordinate of where the tweet occurred
+    :param cells: {} (key, object) -> ("A1", cell)
+        cell grid dictionary of cell classes
+    :return: str
+        cell_id of where the tweet occurred
+    """
+
+    # if a tweet were to occur in between any grid cells, it'll append it's cell id to the below list
+    borders_of_tweet = []
+    for cell in cells:
+        polygon = cells[cell].polygon
+        if tweet_location.within(polygon):
+            return cells[cell].id
+
+        elif tweet_location.touches(polygon):
+            borders_of_tweet.append(cells[cell].id)
+
+    # if tweet was tweeted right on the border of edge of melbourne grid
+    if len(borders_of_tweet) == 1:
+        return borders_of_tweet[0]
+
+    # if tweet intersects between 2 cells
+    elif len(borders_of_tweet) == 2:
+
+        # prioritise cell on the left, e.g. if tweet occurs between A1/A2 then return A1
+        if borders_of_tweet[0][0] == borders_of_tweet[1][0]:
+            return min(borders_of_tweet)
+
+        # prioritise cell below, e.g. if tweet occurs between A1/B1 then return B1
+        if borders_of_tweet[0][1] == borders_of_tweet[1][1]:
+            return max(borders_of_tweet)
+
+    # if tweet intersects between 3 cells
+    elif len(borders_of_tweet) == 3:
+        # get the prefix of each cell id
+        cell_prefix = [x[0] for x in borders_of_tweet]
+        # count the occurrence of each prefix
+        counter = Counter(cell_prefix)
+        # get the most occurred cell id prefix
+        most_occurrence_cell_predix = max(counter, key=counter.get)
+        # get a list of cells with the most prefix
+        more_than_once = list(filter(lambda x: most_occurrence_cell_predix in x, borders_of_tweet))
+
+        # prioritise cell below or left, e.g. if tweet occurs between C2, C3, D4 then return C2
+        return min(more_than_once)
+
+    # if tweet intersects between 4 cells then return the left bottom cell which is the 3rd cell id
+    elif len(borders_of_tweet) == 4:
+        return sorted(borders_of_tweet)[2]
+
+    else:
+        return None
 
 
 def get_tweet_sentiment_score(tweet_text, word_dictionary):
@@ -104,28 +173,32 @@ def main(argv):
     processors = comm.Get_size()    # how many processors where allocated
 
     # get the input twitter json file
-    inputfile = argv[1]
-    tweets = get_json_object(inputfile)
+    tweets = get_json_object(argv[1])
 
     """
-    Block of code below uses broadcasting as a method to read all give json files
+    Block of code below uses broadcasting as a method to read all given  json files
     then distribute them among all processes, however during testing it was found that 
     the program runs faster if you read the json file by it self
-    Will delete this bottom block for assignment just for learning purpose
     """
-    # TODO delete this block of code
-    # if my_rank == 0:
-    #     word_dictionary = get_sentiment_dictionary('AFINN.txt')
-    #     melb_grid = get_json_object('melbGrid.json')
-    # else:
-    #     word_dictionary = None
-    #     melb_grid = None
-    # word_dictionary = comm.bcast(word_dictionary, root=0)
-    # melb_grid = comm.bcast(melb_grid, root=0)
+    if my_rank == 0:
+        word_dictionary = get_sentiment_dictionary('AFINN.txt')
+        melb_grid = get_json_object('melbGrid.json')
+    else:
+        word_dictionary = None
+        melb_grid = None
+    word_dictionary = comm.bcast(word_dictionary, root=0)     # get the list of words with a score
+    melb_grid = comm.bcast(melb_grid, root=0)                 # get the melbourne grid json object
 
-    word_dictionary = get_sentiment_dictionary('AFINN.txt')
+    # TODO will need to use broadcast for bigTwitter file
+    """
+    As Richard quoted
+    The main challenge is to read/process a big file and have 8 processes running in parallel to do this.
+     No single process should read in all of the data into memory
 
-    melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
+    Take smallTwitter.json and have each process (master/slave) running and processing 
+    “parts” of the big file
+
+    """
 
     # cells infomation of this process (key, object) -> ("A1", cell)
     cells = {}
@@ -155,25 +228,13 @@ def main(argv):
         tweet_location = Point(tweet['value']['geometry']['coordinates'])
         # print(tweet_location)
         # print("process: ", my_rank)
+
+        # TODO delete below line as it's for testing
         number_of_tweets += 1
-        # print("process: ", my_rank, tweet['value']["properties"]["text"])
-        # return cell id
 
-        # the below block of code to be a function which returns which cell the tweet was located in
-        for cell in cells:
-            polygon = cells[cell].polygon
-            if tweet_location.within(polygon):
-                cell_id = cells[cell].polygon
-                cells[cell].num_tweet += 1
-                break
-            # elif tweet_location.touches(polygon):
-
-            # elif tweet_location.touches(polygon):
-            # TODO
-            # how to decide where the tweet is if it interacts with another cell
-            # print(tweet_location.intersects(polygon))
-            # print(tweet_location.touches(polygon))
-            # print("check overlap ", cell.id)
+        # get cell id in which the tweet occurred
+        cell_id = get_tweet_cell_location(tweet_location, cells)
+        cells[cell_id].num_tweet += 1
 
         # TODO
         # return sentiment score
