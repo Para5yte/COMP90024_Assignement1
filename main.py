@@ -162,6 +162,9 @@ def main(argv):
     # get the input twitter json file
     tweets = get_json_object(argv[1])
 
+    # we can use the following for name convention for our output files
+    # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
+
     """
     Block of code below uses broadcasting as a method to read all given  json files
     then distribute them among all processes, however during testing it was found that 
