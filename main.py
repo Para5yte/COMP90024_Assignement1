@@ -35,13 +35,13 @@ class Cell:
     sentiment_score = 0
     polygon = Polygon()
 
-    def __init__(self, id):
+    def __init__(self, cell_id):
         """
 
-        :param id: str
+        :param cell_id: str
             the id of the grid cell
         """
-        self.id = id
+        self.id = cell_id
 
 
 def get_json_object(file):
@@ -196,7 +196,6 @@ def main(argv):
         temp_cell = Cell(feature["properties"]["id"])
         temp_array = np.array(feature["geometry"]["coordinates"])  # changes the coordinates to an numpy array
         temp_cell.polygon = Polygon(temp_array[0])
-        # cells.append(temp_cell)
         cells[temp_id] = temp_cell
 
     # total number of tweets in the twitter json file
@@ -236,20 +235,24 @@ def main(argv):
 
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
-            # TODO
+            # TODO less pior
             # create a function for the below block of code
             # the block of code below will add all the returned vale from other process
             for cell in cell_info:
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
 
-        # for cell in cells:
-            # print("number of tweets in", cell, cells[cell].num_tweet)
+        # output the result of the score for each cell and the number tweets in the cell
+        # with the time taken to run the script
+        with open("result2.txt", "w") as text_file:
+            print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
+            for cell in cells:
+                print(cells[cell].id, "\t\t", cells[cell].num_tweet, "\t\t",
+                      cells[cell].sentiment_score, file=text_file)
 
-        with open("result.txt", "a") as text_file:
-            print("number of processes", processors, file=text_file)
             time_taken = time.time() - start_time
-            print("--- %s seconds ---" % time_taken, file=text_file)
+            print("time taken for this script to run with %s Processors --- %s seconds ---"
+                  % (processors, time_taken), file=text_file)
         print("--- %s seconds ---" % time_taken)
 
 
