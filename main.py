@@ -83,6 +83,24 @@ def get_sentiment_dictionary(file):
     return temp
 
 
+### TODO can delete block of code
+def filter_list_of_dict(key, list_of_dict):
+    """ Filters a list of dict only keeping the given key of each line
+
+    :param key: str
+        key to filter by
+    :param list_of_dict:[]
+        list of dictionary
+
+    :return: []
+        returns the new list which only keeps the key
+    """
+    new_list = []
+    for line in list_of_dict:
+        new_list.append(line[key])
+    return new_list
+
+
 def get_tweet_cell_location(tweet_location, cells):
     """ get the cell id of the location where the tweet occurred
 
@@ -155,15 +173,9 @@ def main(argv):
     # start the timer
     start_time = time.time()
 
-    comm = MPI.COMM_WORLD           # initialise MPI
-    my_rank = comm.Get_rank()       # gets the rank of current process
-    processors = comm.Get_size()    # how many processors where allocated
-
-    # get the input twitter json file
-    tweets = get_json_object(argv[1])
-
-    # we can use the following for name convention for our output files
-    # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
+    comm = MPI.COMM_WORLD  # initialise MPI
+    my_rank = comm.Get_rank()  # gets the rank of current process
+    processors = comm.Get_size()  # how many processors where allocated
 
     """
     Block of code below uses broadcasting as a method to read all given  json files
@@ -176,10 +188,10 @@ def main(argv):
     else:
         word_dictionary = None
         melb_grid = None
-    word_dictionary = comm.bcast(word_dictionary, root=0)     # get the list of words with a score
-    melb_grid = comm.bcast(melb_grid, root=0)                 # get the melbourne grid json object
+    word_dictionary = comm.bcast(word_dictionary, root=0)  # get the list of words with a score
+    melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
 
-    # TODO will need to use broadcast for bigTwitter file
+    # TODO explain to Babara
     """
     As Richard quoted
     The main challenge is to read/process a big file and have 8 processes running in parallel to do this.
@@ -189,6 +201,37 @@ def main(argv):
     “parts” of the big file
 
     """
+
+    # we can use the following for name convention for our output files
+    # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
+
+    # scatter the tweet data in chucks
+    if my_rank == 0:
+        # get the input twitter json file
+        tweets = get_json_object(argv[1])
+
+        # only need the tweet data which is stored in the key "rows"
+        tweets = tweets["rows"]
+
+        """
+            filters the tweet list to only keep data which we'll be analysing such as 
+            geometry and text properties which is stored in the key 'value'
+            This in term will also save memory (RAM)
+            code taken from https://stackoverflow.com/questions/25148611/how-do-i-extract-all-the-values-of-a-specific-key-from-a-list-of-dictionaries
+        """
+        tweets = [tweets['value'] for tweets in tweets]
+
+        # divide the tweet into chucks to scatter among other processors
+        chunks_of_tweets = [[] for _ in range(processors)]
+        for i, tweet in enumerate(tweets):
+            chunks_of_tweets[i % processors].append(tweet)
+
+    else:
+        tweets = None
+        chunks_of_tweets = None
+
+    # scatter the tweet data to save memory for each process therefore processing "parts" of data
+    tweets = comm.scatter(chunks_of_tweets, root=0)
 
     # cells information of this process (key, object) -> ("A1", cell)
     cells = {}
@@ -201,17 +244,6 @@ def main(argv):
         temp_cell.polygon = Polygon(temp_array[0])
         cells[temp_id] = temp_cell
 
-    # total number of tweets in the twitter json file
-    total_tweets = len(tweets["rows"])
-
-    # number of tweets this set of script will run
-    # TODO
-    # currently this will round up the number
-    # therefore if we have 19 tweets but 8 processors only 6 of them will do work
-    num_tweets = math.ceil(total_tweets / processors)
-
-    tweets = tweets["rows"][num_tweets*my_rank:num_tweets * (my_rank + 1)]
-
     number_of_tweets = 0
     for tweet in tweets:
 
@@ -219,7 +251,7 @@ def main(argv):
         number_of_tweets += 1
 
         # get cell id in which the tweet occurred
-        tweet_location = Point(tweet['value']['geometry']['coordinates'])
+        tweet_location = Point(tweet['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
         if cell_id is None:
             continue
