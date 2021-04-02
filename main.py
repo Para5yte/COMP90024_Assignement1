@@ -244,12 +244,7 @@ def main(argv):
         temp_cell.polygon = Polygon(temp_array[0])
         cells[temp_id] = temp_cell
 
-    number_of_tweets = 0
     for tweet in tweets:
-
-        # TODO delete below line as it's for testing
-        number_of_tweets += 1
-
         # get cell id in which the tweet occurred
         tweet_location = Point(tweet['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
@@ -260,8 +255,6 @@ def main(argv):
         # TODO
         # return sentiment score
         # tweet_text = tweet['value']['properties']['text']
-
-    print("process", my_rank, "number of tweets this process went through", number_of_tweets)
 
     if my_rank != 0:
 
@@ -288,7 +281,6 @@ def main(argv):
             time_taken = time.time() - start_time
             print("time taken for this script to run with %s Processors --- %s seconds ---"
                   % (processors, time_taken), file=text_file)
-        print("--- %s seconds ---" % time_taken)
 
 
 if __name__ == '__main__':
