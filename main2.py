@@ -168,7 +168,21 @@ def get_tweet_cell_location(tweet_location, cells):
 
 
 def get_tweet_sentiment_score(tweet_text, word_dictionary):
-    print(5)
+    tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '', ) \
+        .replace("'", '').replace('"', '')
+
+    # change tweet text to lower character
+    tweet_text = tweet_text.lower()
+
+    # TODO, check for cool and cool stuff difference
+    filtered_list = [w for w in word_dictionary if w in tweet_text]
+    print(filtered_list)
+
+    score = 0
+    for word in filtered_list:
+        score += word_dictionary[word]
+
+    return score
 
 
 def main(argv):
@@ -265,26 +279,7 @@ def main(argv):
     list_texto = []
     list_id = []
 
-    for i in range(len(tweets)):
-        list_texto.append(tweets[i]['properties']['text'])
-        # list_id.append(tweets['rows'][i]['id'])
 
-    data_textos = pd.DataFrame({'texto':list_texto})
-
-    data_textos['texto'] = data_textos['texto'].str.replace('!','',regex=True).str.replace(',','',regex=True)\
-                      .str.replace('?','',regex=True).str.replace('.','',regex=True).str.replace('"','',regex=True)\
-                      .str.replace('"','',regex=True).str.replace("'","",regex=True)
-    print(data_textos['texto'][0])
-    # filteredList = [w for w in word_dictionary if not w in data_textos['texto']]
-    filteredList = [w for w in word_dictionary if w in data_textos['texto'][0]]
-    print(filteredList)
-    # print(Counter(filteredList))
-    def get_number_of_elements(list):
-        count = 0
-        for word in list:
-            count += 1
-        return count  
-    print("Number of elements in the list: ", get_number_of_elements(filteredList))
 
     # print(data_textos.head())
     """
@@ -300,10 +295,19 @@ def main(argv):
             continue
         cells[cell_id].num_tweet += 1
 
-        # TODO
-        # return sentiment score
-        #tweet_text = tweet['value']['properties']['text']
-  
+        tweet_text = tweet['properties']['text']
+
+
+        # data_textos = pd.DataFrame({'texto': list_texto})
+
+        tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '',)\
+            .replace("'", '').replace('"', '')
+
+        filtered_list = [w for w in word_dictionary if w in tweet_text]
+
+        score = get_tweet_sentiment_score(tweet_text, word_dictionary)
+        cells[cell_id].sentiment_score += score
+
 
     if my_rank != 0:
 
@@ -321,6 +325,7 @@ def main(argv):
         # TODO less prior, to make the below code a function
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script
+        # TODO we can also change the printing using a grid or something
         with open("result.txt", "w") as text_file:
             print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
             for cell in cells:
