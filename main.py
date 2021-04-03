@@ -10,8 +10,14 @@ import math
 import os
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
+import nltk
+import pandas as pd
+import re
+from nltk.stem import PorterStemmer
+from collections import Counter
 
-
+#nltk.download('punkt')
+#nltk.download('stopwords')
 class Cell:
     """
     A class used to represent a grid cell
@@ -137,7 +143,7 @@ def main():
     # melb_grid = comm.bcast(melb_grid, root=0)
 
     word_dictionary = get_sentiment_dictionary('AFINN.txt')
-
+    #print (word_dictionary)
     melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
 
     # will read melbourne grid json and append into cell dictionary
@@ -154,7 +160,6 @@ def main():
     # tweets = get_json_object('tinyTwitter.json')  # Reads the twitter data file
     tweets = get_json_object('smallTwitter.json')  # Reads the twitter data file
     # tweets = get_json_object("bigTwitter.json")  # Reads the twitter data file
-
     # total number of tweets in the twitter json file
     total_tweets = len(tweets["rows"])
 
@@ -163,9 +168,34 @@ def main():
     # currently this will round up the number
     # therefore if we have 19 tweets but 8 processors only 6 of them will do work
     num_tweets = math.ceil(total_tweets / processors)
+    list_texto = []
+    list_id = []
+
+    for i in range(len(tweets["rows"])):
+        list_texto.append(tweets['rows'][i]['value']['properties']['text'])
+        list_id.append(tweets['rows'][i]['id'])
+    data_textos = pd.DataFrame({'id':list_id,'texto':list_texto})
+    
+    data_textos['texto'] = data_textos['texto'].str.replace('!','',regex=True).str.replace(',','',regex=True)\
+                      .str.replace('?','',regex=True).str.replace('.','',regex=True).str.replace('"','',regex=True)\
+                      .str.replace('"','',regex=True).str.replace("'","",regex=True)
+    filteredList = [w for w in word_dictionary if not w in data_textos['texto']]
+    print(Counter(filteredList))
+    def get_number_of_elements(list):
+        count = 0
+        for word in list:
+            count += 1
+        return count  
+    print("Number of elements in the list: ", get_number_of_elements(filteredList))
+    
+      
+    
+                
+    #print(data_textos.head())
+    
+   
 
     tweets = tweets["rows"][num_tweets*my_rank:num_tweets * (my_rank + 1)]
-
     number_of_tweets = 0
     for tweet in tweets:
         tweet_location = Point(tweet['value']['geometry']['coordinates'])
@@ -193,7 +223,8 @@ def main():
 
         # TODO
         # return sentiment score
-        # tweet_text = tweet['value']['properties']['text']
+        #tweet_text = tweet['value']['properties']['text']
+  
 
     print("process", my_rank, "number of tweets this process went through", number_of_tweets)
 
@@ -223,3 +254,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
+
