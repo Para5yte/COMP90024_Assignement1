@@ -275,13 +275,13 @@ def main(argv):
                       .str.replace('?','',regex=True).str.replace('.','',regex=True).str.replace('"','',regex=True)\
                       .str.replace('"','',regex=True).str.replace("'","",regex=True)
     filteredList = [w for w in word_dictionary if not w in data_textos['texto']]
-    print(Counter(filteredList))
+    # print(Counter(filteredList))
     def get_number_of_elements(list):
         count = 0
         for word in list:
             count += 1
         return count  
-    print("Number of elements in the list: ", get_number_of_elements(filteredList))
+    # print("Number of elements in the list: ", get_number_of_elements(filteredList))
 
     # print(data_textos.head())
     """
