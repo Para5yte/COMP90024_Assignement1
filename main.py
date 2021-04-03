@@ -318,7 +318,7 @@ def main(argv):
         # TODO less prior, to make the below code a function
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script
-        with open("result2.txt", "w") as text_file:
+        with open("result.txt", "w") as text_file:
             print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
             for cell in cells:
                 print(cells[cell].id, "\t\t", cells[cell].num_tweet, "\t\t",
@@ -327,6 +327,8 @@ def main(argv):
             time_taken = time.time() - start_time
             print("time taken for this script to run with %s Processors --- %s seconds ---"
                   % (processors, time_taken), file=text_file)
+            print("time taken for this script to run with %s Processors --- %s seconds ---"
+                  % (processors, time_taken))
 
 
 if __name__ == '__main__':
