@@ -168,6 +168,8 @@ def get_tweet_sentiment_score(tweet_text, word_dictionary):
     # change tweet text to lower character
     tweet_text = tweet_text.lower()
 
+    ### i think we should split the string first incase for cool, stuff.
+    ### Is “cool, stuff” an exact match to “cool stuff”? Nope! It passes the “cool,” matching rules though
     # TODO, check for cool and cool stuff difference
     filtered_list = [w for w in word_dictionary if w in tweet_text]
     print(filtered_list)
