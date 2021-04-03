@@ -11,7 +11,14 @@ import sys
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
+import nltk
+import pandas as pd
+import re
+from nltk.stem import PorterStemmer
+from collections import Counter
 
+#nltk.download('punkt')
+#nltk.download('stopwords')
 
 class Cell:
     """
@@ -191,6 +198,7 @@ def main(argv):
     word_dictionary = comm.bcast(word_dictionary, root=0)  # get the list of words with a score
     melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
 
+
     # TODO explain to Babara
     """
     As Richard quoted
@@ -199,6 +207,10 @@ def main(argv):
 
     Take smallTwitter.json and have each process (master/slave) running and processing 
     “parts” of the big file
+    
+    word_dictionary = get_sentiment_dictionary('AFINN.txt')
+    #print (word_dictionary)
+    melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
 
     """
 
@@ -245,6 +257,38 @@ def main(argv):
         temp_cell.polygon = Polygon(temp_array[0])
         cells[temp_id] = temp_cell
 
+
+    """
+    Barbara's code
+    """
+
+    list_texto = []
+    list_id = []
+
+    for i in range(len(tweets)):
+        list_texto.append(tweets[i]['properties']['text'])
+        # list_id.append(tweets['rows'][i]['id'])
+
+    data_textos = pd.DataFrame({'texto':list_texto})
+    
+    data_textos['texto'] = data_textos['texto'].str.replace('!','',regex=True).str.replace(',','',regex=True)\
+                      .str.replace('?','',regex=True).str.replace('.','',regex=True).str.replace('"','',regex=True)\
+                      .str.replace('"','',regex=True).str.replace("'","",regex=True)
+    filteredList = [w for w in word_dictionary if not w in data_textos['texto']]
+    print(Counter(filteredList))
+    def get_number_of_elements(list):
+        count = 0
+        for word in list:
+            count += 1
+        return count  
+    print("Number of elements in the list: ", get_number_of_elements(filteredList))
+
+    # print(data_textos.head())
+    """
+    Barbara's code
+    """
+    number_of_tweets = 0
+
     for tweet in tweets:
         # get cell id in which the tweet occurred
         tweet_location = Point(tweet['geometry']['coordinates'])
@@ -255,7 +299,8 @@ def main(argv):
 
         # TODO
         # return sentiment score
-        # tweet_text = tweet['value']['properties']['text']
+        #tweet_text = tweet['value']['properties']['text']
+  
 
     if my_rank != 0:
 
