@@ -235,7 +235,8 @@ def main(argv):
 
     # cells information of this process (key, object) -> ("A1", cell)
     cells = {}
-
+    
+    # TODO low prior can make below code a function
     # will read melbourne grid json and append into cell dictionary
     for feature in melb_grid['features']:
         temp_id = feature["properties"]["id"]
