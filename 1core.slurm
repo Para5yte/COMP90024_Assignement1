@@ -9,6 +9,7 @@ module load foss/2019b
 module load python/3.7.4
 module load numpy/1.18.0-python-3.7.4
 pip install --user shapely
+pip install --user nltk
 
 # launch python code
 srun -n 1 python3 main.py "smallTwitter.json"
