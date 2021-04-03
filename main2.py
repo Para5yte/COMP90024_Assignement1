@@ -5,16 +5,10 @@
 import json
 import numpy as np
 import time
-import math
 import os
 import sys
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
-from collections import Counter
-import nltk
-import pandas as pd
-import re
-from nltk.stem import PorterStemmer
 from collections import Counter
 
 #nltk.download('punkt')
