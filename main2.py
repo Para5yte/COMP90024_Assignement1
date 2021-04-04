@@ -70,7 +70,6 @@ def get_sentiment_dictionary(file):
 
     with open(file) as f:
         for line in f:
-            # print(line)
 
             # this block of code works without assumption
             split_line = line.split()
@@ -162,7 +161,7 @@ def get_tweet_cell_location(tweet_location, cells):
         return None
 
 
-def word_begin_with(word, dictionary):
+def word_beginning_with(word):
     """ Check if the dictionary has any keys starting with the input word
         e.g. "cool stuff" with "cool" as input for word, then return true
 
@@ -175,7 +174,7 @@ def word_begin_with(word, dictionary):
         false if there isn't a key which starts with word
     """
     word += " "
-    for key in dictionary.keys():
+    for key in afinn_dictionary.keys():
         if key.startswith(word):
             return True
     return False
@@ -213,89 +212,114 @@ def get_tweet_sentiment_score(tweet_text):
     score = 0
     temp_score = 0
     temp_word = ""
+    new_word = ""
 
     for word in split_text:
 
-        # TODO ‘abandon...!!!’ is a match as ‘abandon.’ meets the rules.
+        # TODO happy?:-) matches as happy? is a valid substring but happy:-)
+        #  does not fit as : is not a valid punctuation symbol but happy :-) is a
+        # if a word contains the punctuation then it's a match
+        # more examples of matches: good!@
+        # Good!jhkajshkjhads
+        # Good?,mkkwjwh
+        # won can match won't
         """ when a word ends with one of the punctuation ! , ? ' " the word ends at that point
             therefore there is no need to check in AFINN with the word following it
         """
-        if word.endswith(punctuation_tuple):
 
-            # removes all the punctuation of a word
+        #   if word.endswith(punctuation_tuple):    #thold code for ends with but richard said it's not right
+
+
+
+        # check if current word has any punctuation
+        if any(punctuation in punctuation_tuple for punctuation in word):
+
+            # removes all the punctuation of a word from the back
             word = remove_punctuation(word)
 
+            # if the temp word is not empty try find a match in AFINN
             if temp_word != "":
-                try:
-                    temp_score = afinn_dictionary[temp_word + " " + word]
+                # check the score of temp word concatenated with current word
+                temp_score = afinn_dictionary.get(temp_word+" "+word, 0)
+
+                if temp_score != 0:
                     score += temp_score
-                except KeyError:
-                    if temp_score == 0:
-                        temp_word = ""
-                        continue
-
-                    score += afinn_dictionary[temp_word]
+                else:
+                    score += afinn_dictionary.get(temp_word, 0)
                     temp_word = ""
-                finally:
-                    temp_score = 0
-            else:
-                try:
-                    score += afinn_dictionary[word]
-                except KeyError:
-                    continue
 
+                temp_score = 0
+
+            else:
+                score += afinn_dictionary.get(word, 0)
+
+
+                # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
+                # if word_beginning_with(word):
+                #     try:
+                #         temp_score = afinn_dictionary[word]
+                #     except KeyError:
+                #         None
+                #     finally:
+                #         temp_word += word
+                # else:
+                #     try:
+                #         score += afinn_dictionary[temp_word]
+                #     except KeyError:
+                #         None
+                #     finally:
+                #         temp_word = ""
+                # # split the word into
+                # # also has to check if a word contains 2 words e.g cool!good
+                # # index = words.index(word)
+                # # words.insert(index+1, new_word)
+                # continue
         else:
             # check if the temporary word is empty, if not search in AFINN
             if temp_word != "":
+
                 temp_word += " " + word
 
-                if word_begin_with(temp_word, afinn_dictionary):
-                    try:
-                        temp_score = afinn_dictionary[temp_word]
-                    except KeyError:
-                        continue
-                else:
-                    try:
-                        score += afinn_dictionary[temp_word]
-                    except KeyError:
-                        temp_word = ""
-                        if temp_score != 0:
-                            score += temp_score
-                            temp_score = 0
+                # check if there are any matches beginning with temp word
+                if word_beginning_with(temp_word):
 
-                        continue
+                    temp_score = afinn_dictionary.get(temp_word, 0)
+
+                else:
+
+                    # check if the temporary word is in AFINN, if not get the score of current word
+                    # e.g. temp_word = "cool stuff" returns 3
+                    # e.g. temp_word = "cool corpse" returns -1
+                    if afinn_dictionary.get(temp_word, 0) == 0:
+
+                        print(word, afinn_dictionary.get(word, 0))
+                        score += afinn_dictionary.get(word, 0)
+                    else:
+                        print(temp_word, afinn_dictionary.get(temp_word, 0))
+                        score += afinn_dictionary.get(temp_word, 0)
+
+                    # using example above, if temp_word = "cool corpse"
+                    # we'll use the stored temp_score for "cool"
+                    if temp_score != 0:
+                        score += temp_score
+                        temp_score = 0
+
+                    temp_word = word
+
+            # if temporary word is empty, then check if there is a match or not
             else:
                 temp_word += word
 
-                if word_begin_with(temp_word, afinn_dictionary):
-                    try:
-                        temp_score = afinn_dictionary[temp_word]
-                    except KeyError:
-                        continue
+                # check if there are any matches beginning with temp word
+                if word_beginning_with(temp_word):
+                    temp_score = afinn_dictionary.get(temp_word, 0)
+
                 else:
-                    try:
-                        score += afinn_dictionary[temp_word]
-                    except KeyError:
-                        None
-                    finally:
-                        temp_word = ""
+                    score += afinn_dictionary.get(temp_word, 0)
+                    temp_word = ""
 
-    # tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '', ) \
-    #   .replace("'", '').replace('"', '')
-
-    # change tweet text to lower character
-    # tweet_text = tweet_text.lower()
-
-    # i think we should split the string first incase for cool, stuff.
-    # Is “cool, stuff” an exact match to “cool stuff”? Nope! It passes the “cool,” matching rules though
-
-    # so the code below with "w in tweet_text" is weird,
-    # example if a word called "not", it will match with no since "no" is in "not"
-    filtered_list = [w for w in afinn_dictionary if w in tweet_text]
-    # filtered_list = [lambda w: for w i, word_dictionary]
-    # print(filtered_list)
-    # print(word_dictionary)
-
+    print(split_text)
+    print(score)
     return score
 
 
@@ -313,16 +337,13 @@ def main(argv):
     processors = comm.Get_size()  # how many processors where allocated
 
     """
-    Block of code below uses broadcasting as a method to read all given  json files
-    then distribute them among all processes, however during testing it was found that 
-    the program runs faster if you read the json file by it self
+    Block of code below uses broadcasting as a method to read all given json files
+    then distribute them among all processes
     """
     if my_rank == 0:
         melb_grid = get_json_object('melbGrid.json')
     else:
-        #afinn_dictionary = {}
         melb_grid = None
-    # afinn_dictionary = comm.bcast(afinn_dictionary, root=0)  # get the list of words with a score
     melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
 
     # initialise the afinn_dictionary global variable
@@ -386,23 +407,10 @@ def main(argv):
         temp_cell.polygon = Polygon(temp_array[0])
         cells[temp_id] = temp_cell
 
-
-    """
-    Barbara's code
-    """
-
-    list_texto = []
-    list_id = []
-
-
-
-    # print(data_textos.head())
-    """
-    Barbara's code
-    """
     number_of_tweets = 0
 
     for tweet in tweets:
+
         # get cell id in which the tweet occurred
         tweet_location = Point(tweet['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
