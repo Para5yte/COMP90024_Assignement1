@@ -1,6 +1,6 @@
 # COMP90024 - Cluster and Cloud Computing Assignment 1
 # Takemitsu Yamanaka 757038
-# Barbara Alvarez    1017615
+# Barbara Montt    1017615
 
 import json
 import numpy as np
@@ -11,12 +11,11 @@ from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
 
-#nltk.download('punkt')
-#nltk.download('stopwords')
-
 """ Global Variables
 """
-punctuation_tuple = ('!', ',', '?', "'", '"')           # Punctuations
+punctuation_tuple = ('!', ',', '?', '.', "'", '"')
+afinn_dictionary = {}
+
 
 class Cell:
     """
@@ -69,7 +68,6 @@ def get_sentiment_dictionary(file):
         dictionary of word (key) and it's related score (value)
     """
 
-    temp = {}
     with open(file) as f:
         for line in f:
             # print(line)
@@ -83,9 +81,8 @@ def get_sentiment_dictionary(file):
 
             # this code below only works if we assume the text file will be indented by "word" \t "score"
             # (key, val) = line.split('\t', 1)
-            temp[key] = int(val)
+            afinn_dictionary[key] = int(val)
 
-    return temp
 
 
 ### TODO can delete block of code
@@ -166,6 +163,17 @@ def get_tweet_cell_location(tweet_location, cells):
 
 
 def word_begin_with(word, dictionary):
+    """ Check if the dictionary has any keys starting with the input word
+        e.g. "cool stuff" with "cool" as input for word, then return true
+
+    :param word: str
+        word to search
+    :param dictionary: {}
+        AFINN dictionary
+    :return: bool
+        true if there is a key which starts with word
+        false if there isn't a key which starts with word
+    """
     word += " "
     for key in dictionary.keys():
         if key.startswith(word):
@@ -173,18 +181,39 @@ def word_begin_with(word, dictionary):
     return False
 
 
-def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
+def remove_punctuation(word):
+    """ removes the punctuation on the end of the word
+        e.g. "awesome!!" will return "awesome"
+        e.g. "awesome!@" will return "awesome!@"
+        e.g. "awesome@!" will return "awesome@"
 
+    :param word: str
+        word to remove punctuation
+    :return: str
+        returns the edited word
+    """
+    new_word = ""
+    for i in reversed(range(len(word))):
+        if word[i] in punctuation_tuple:
+            word = word[:i]
+        else:
+            break
+    return word
+
+
+def get_tweet_sentiment_score(tweet_text):
+    """ get the tweet sentiment score from the AFINN dictionary
+
+    :param tweet_text:
+
+    :return:
+    """
     split_text = tweet_text.lower().split()
-
-    # TODO, check for cool and cool stuff difference
-    # TODO "right direction" check
-    # since there is no right, we'll have to search the next word as well
-    # TODO 3 words "does not work"
 
     score = 0
     temp_score = 0
     temp_word = ""
+
     for word in split_text:
 
         # TODO ‘abandon...!!!’ is a match as ‘abandon.’ meets the rules.
@@ -192,8 +221,9 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
             therefore there is no need to check in AFINN with the word following it
         """
         if word.endswith(punctuation_tuple):
-            # TODO get len of punctuation and remove it from the word
-            word = word[:-1]
+
+            # removes all the punctuation of a word
+            word = remove_punctuation(word)
 
             if temp_word != "":
                 try:
@@ -288,14 +318,15 @@ def main(argv):
     the program runs faster if you read the json file by it self
     """
     if my_rank == 0:
-        word_dictionary = get_sentiment_dictionary('AFINN.txt')
         melb_grid = get_json_object('melbGrid.json')
     else:
-        word_dictionary = None
+        #afinn_dictionary = {}
         melb_grid = None
-    word_dictionary = comm.bcast(word_dictionary, root=0)  # get the list of words with a score
+    # afinn_dictionary = comm.bcast(afinn_dictionary, root=0)  # get the list of words with a score
     melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
 
+    # initialise the afinn_dictionary global variable
+    get_sentiment_dictionary('AFINN.txt')
 
     # TODO explain to Babara
     """
@@ -375,33 +406,25 @@ def main(argv):
         # get cell id in which the tweet occurred
         tweet_location = Point(tweet['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
+
         if cell_id is None:
             continue
+
         cells[cell_id].num_tweet += 1
 
         tweet_text = tweet['properties']['text']
 
-
-        # data_textos = pd.DataFrame({'texto': list_texto})
-
-        # tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '',)\
-        #    .replace("'", '').replace('"', '')
-
-        filtered_list = [w for w in word_dictionary if w in tweet_text]
-
-        score = get_tweet_sentiment_score(tweet_text, word_dictionary)
+        score = get_tweet_sentiment_score(tweet_text)
         cells[cell_id].sentiment_score += score
 
-
     if my_rank != 0:
-
         comm.send(cells, dest=0)
     else:
 
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
-            # TODO less prior to make the below code a function
-            # the block of code below will add all the returned vale from other process
+
+            # combine the data from other processes
             for cell in cell_info:
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
