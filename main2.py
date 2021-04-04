@@ -230,7 +230,6 @@ def get_tweet_sentiment_score(tweet_text):
         #   if word.endswith(punctuation_tuple):    #thold code for ends with but richard said it's not right
 
 
-
         # check if current word has any punctuation
         if any(punctuation in punctuation_tuple for punctuation in word):
 
@@ -291,20 +290,20 @@ def get_tweet_sentiment_score(tweet_text):
                     # e.g. temp_word = "cool stuff" returns 3
                     # e.g. temp_word = "cool corpse" returns -1
                     if afinn_dictionary.get(temp_word, 0) == 0:
-
-                        print(word, afinn_dictionary.get(word, 0))
+                        if word_beginning_with(word):
+                            temp_word = word
+                            continue
                         score += afinn_dictionary.get(word, 0)
                     else:
                         print(temp_word, afinn_dictionary.get(temp_word, 0))
                         score += afinn_dictionary.get(temp_word, 0)
+                        temp_word = ""
 
                     # using example above, if temp_word = "cool corpse"
                     # we'll use the stored temp_score for "cool"
                     if temp_score != 0:
                         score += temp_score
                         temp_score = 0
-
-                    temp_word = word
 
             # if temporary word is empty, then check if there is a match or not
             else:

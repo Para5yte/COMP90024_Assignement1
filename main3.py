@@ -11,8 +11,9 @@ from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
 
-#nltk.download('punkt')
-#nltk.download('stopwords')
+
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 class Cell:
     """
@@ -165,7 +166,6 @@ def get_tweet_sentiment_score(tweet_text, word_dictionary):
     tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '', ) \
         .replace("'", '').replace('"', '')
 
-
     ### i think we should split the string first incase for cool, stuff.
     ### Is “cool, stuff” an exact match to “cool stuff”? Nope! It passes the “cool,” matching rules though
     # TODO, check for cool and cool stuff difference
@@ -176,7 +176,7 @@ def get_tweet_sentiment_score(tweet_text, word_dictionary):
     newDict = {}
     for (key, value) in counts.items():
 
-        if any(key==a for a in word_dictionary.keys()):
+        if any(key == a for a in word_dictionary.keys()):
             newDict[key] = value
     print(newDict)
 
@@ -208,7 +208,6 @@ def main(argv):
     word_dictionary = comm.bcast(word_dictionary, root=0)  # get the list of words with a score
     melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
 
-
     # TODO explain to Babara
     """
     As Richard quoted
@@ -217,7 +216,7 @@ def main(argv):
 
     Take smallTwitter.json and have each process (master/slave) running and processing 
     “parts” of the big file
-    
+
     word_dictionary = get_sentiment_dictionary('AFINN.txt')
     #print (word_dictionary)
     melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
@@ -257,7 +256,7 @@ def main(argv):
 
     # cells information of this process (key, object) -> ("A1", cell)
     cells = {}
-    
+
     # TODO low prior can make below code a function
     # will read melbourne grid json and append into cell dictionary
     for feature in melb_grid['features']:
@@ -267,15 +266,12 @@ def main(argv):
         temp_cell.polygon = Polygon(temp_array[0])
         cells[temp_id] = temp_cell
 
-
     """
     Barbara's code
     """
 
     list_texto = []
     list_id = []
-
-
 
     # print(data_textos.head())
     """
@@ -293,17 +289,15 @@ def main(argv):
 
         tweet_text = tweet['properties']['text']
 
-
         # data_textos = pd.DataFrame({'texto': list_texto})
 
-        tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '',)\
+        tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '', ) \
             .replace("'", '').replace('"', '')
 
         filtered_list = [w for w in word_dictionary if w in tweet_text]
 
         score = get_tweet_sentiment_score(tweet_text, word_dictionary)
         cells[cell_id].sentiment_score += score
-
 
     if my_rank != 0:
 
