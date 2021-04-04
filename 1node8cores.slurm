@@ -1,9 +1,14 @@
 #!/bin/bash
 
 # 8 tasks, 8 tasks per node = 8 cores
+#SBATCH --job-name=1node8cores
 #SBATCH --partition=snowy
 #SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=8
+#SBATCH --time=12:00:00
+
+#SBATCH -o slurm.%N.%j.out # STDOUT
+#SBATCH -e slurm.%N.%j.err # STDERR
 
 # load required modules
 module load foss/2019b

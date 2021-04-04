@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # 1 node, 1 task per node = 1 core
+#SBATCH --job-name=1node1core
 #SBATCH --partition=snowy
 #SBATCH --ntasks=1
+#SBATCH --time=12:00:00
 
 # load required modules
 module load foss/2019b
