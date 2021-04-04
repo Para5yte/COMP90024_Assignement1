@@ -14,6 +14,10 @@ from collections import Counter
 #nltk.download('punkt')
 #nltk.download('stopwords')
 
+""" Global Variables
+"""
+punctuation_tuple = ('!', ',', '?', "'", '"')           # Punctuations
+
 class Cell:
     """
     A class used to represent a grid cell
@@ -161,22 +165,106 @@ def get_tweet_cell_location(tweet_location, cells):
         return None
 
 
-def get_tweet_sentiment_score(tweet_text, word_dictionary):
-    tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '', ) \
-        .replace("'", '').replace('"', '')
+def word_begin_with(word, dictionary):
+    word += " "
+    for key in dictionary.keys():
+        if key.startswith(word):
+            return True
+    return False
 
-    # change tweet text to lower character
-    tweet_text = tweet_text.lower()
 
-    ### i think we should split the string first incase for cool, stuff.
-    ### Is “cool, stuff” an exact match to “cool stuff”? Nope! It passes the “cool,” matching rules though
+def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
+
+    split_text = tweet_text.lower().split()
+
     # TODO, check for cool and cool stuff difference
-    filtered_list = [w for w in word_dictionary if w in tweet_text]
-    print(filtered_list)
+    # TODO "right direction" check
+    # since there is no right, we'll have to search the next word as well
+    # TODO 3 words "does not work"
 
     score = 0
-    for word in filtered_list:
-        score += word_dictionary[word]
+    temp_score = 0
+    temp_word = ""
+    for word in split_text:
+
+        # TODO ‘abandon...!!!’ is a match as ‘abandon.’ meets the rules.
+        """ when a word ends with one of the punctuation ! , ? ' " the word ends at that point
+            therefore there is no need to check in AFINN with the word following it
+        """
+        if word.endswith(punctuation_tuple):
+            # TODO get len of punctuation and remove it from the word
+            word = word[:-1]
+
+            if temp_word != "":
+                try:
+                    temp_score = afinn_dictionary[temp_word + " " + word]
+                    score += temp_score
+                except KeyError:
+                    if temp_score == 0:
+                        temp_word = ""
+                        continue
+
+                    score += afinn_dictionary[temp_word]
+                    temp_word = ""
+                finally:
+                    temp_score = 0
+            else:
+                try:
+                    score += afinn_dictionary[word]
+                except KeyError:
+                    continue
+
+        else:
+            # check if the temporary word is empty, if not search in AFINN
+            if temp_word != "":
+                temp_word += " " + word
+
+                if word_begin_with(temp_word, afinn_dictionary):
+                    try:
+                        temp_score = afinn_dictionary[temp_word]
+                    except KeyError:
+                        continue
+                else:
+                    try:
+                        score += afinn_dictionary[temp_word]
+                    except KeyError:
+                        temp_word = ""
+                        if temp_score != 0:
+                            score += temp_score
+                            temp_score = 0
+
+                        continue
+            else:
+                temp_word += word
+
+                if word_begin_with(temp_word, afinn_dictionary):
+                    try:
+                        temp_score = afinn_dictionary[temp_word]
+                    except KeyError:
+                        continue
+                else:
+                    try:
+                        score += afinn_dictionary[temp_word]
+                    except KeyError:
+                        None
+                    finally:
+                        temp_word = ""
+
+    # tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '', ) \
+    #   .replace("'", '').replace('"', '')
+
+    # change tweet text to lower character
+    # tweet_text = tweet_text.lower()
+
+    # i think we should split the string first incase for cool, stuff.
+    # Is “cool, stuff” an exact match to “cool stuff”? Nope! It passes the “cool,” matching rules though
+
+    # so the code below with "w in tweet_text" is weird,
+    # example if a word called "not", it will match with no since "no" is in "not"
+    filtered_list = [w for w in afinn_dictionary if w in tweet_text]
+    # filtered_list = [lambda w: for w i, word_dictionary]
+    # print(filtered_list)
+    # print(word_dictionary)
 
     return score
 
@@ -296,8 +384,8 @@ def main(argv):
 
         # data_textos = pd.DataFrame({'texto': list_texto})
 
-        tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '',)\
-            .replace("'", '').replace('"', '')
+        # tweet_text = tweet_text.replace('!', '').replace('?', '').replace('.', '',)\
+        #    .replace("'", '').replace('"', '')
 
         filtered_list = [w for w in word_dictionary if w in tweet_text]
 
