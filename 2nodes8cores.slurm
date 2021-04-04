@@ -13,4 +13,4 @@ pip install --user shapely
 pip install --user nltk
 
 # launch python code
-srun -n 8 python3 main.py "smallTwitter.json"
+srun -n 8 python3 main2.py "smallTwitter.json"
