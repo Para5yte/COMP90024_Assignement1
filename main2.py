@@ -167,8 +167,6 @@ def word_beginning_with(word):
 
     :param word: str
         word to search
-    :param dictionary: {}
-        AFINN dictionary
     :return: bool
         true if there is a key which starts with word
         false if there isn't a key which starts with word
@@ -203,9 +201,10 @@ def remove_punctuation(word):
 def get_tweet_sentiment_score(tweet_text):
     """ get the tweet sentiment score from the AFINN dictionary
 
-    :param tweet_text:
-
-    :return:
+    :param tweet_text: str
+        tweet text
+    :return: int
+        sentiment score of the tweet
     """
     split_text = tweet_text.lower().split()
 
@@ -356,11 +355,6 @@ def main(argv):
 
     Take smallTwitter.json and have each process (master/slave) running and processing 
     “parts” of the big file
-    
-    word_dictionary = get_sentiment_dictionary('AFINN.txt')
-    #print (word_dictionary)
-    melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
-
     """
 
     # we can use the following for name convention for our output files
@@ -377,10 +371,12 @@ def main(argv):
         """
             filters the tweet list to only keep data which we'll be analysing such as 
             geometry and text properties which is stored in the key 'value'
-            This in term will also save memory (RAM)
-            code taken from https://stackoverflow.com/questions/25148611/how-do-i-extract-all-the-values-of-a-specific-key-from-a-list-of-dictionaries
+            This in turn will also save memory (RAM)
         """
         tweets = [tweets['value'] for tweets in tweets]
+
+        # TODO delete comment below
+        # code taken from https://stackoverflow.com/questions/25148611/how-do-i-extract-all-the-values-of-a-specific-key-from-a-list-of-dictionaries
 
         # divide the tweet into chucks to scatter among other processors
         chunks_of_tweets = [[] for _ in range(processors)]
