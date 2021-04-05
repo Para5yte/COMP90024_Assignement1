@@ -1,24 +1,27 @@
 # COMP90024 - Cluster and Cloud Computing Assignment 1
 # Takemitsu Yamanaka 757038
-# Barbara Alvarez    1017615
+# Barbara Montt    1017615
 
 import json
 import numpy as np
 import time
-import math
 import os
 import sys
+import ijson
+
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
-import nltk
-import pandas as pd
-import re
-from nltk.stem import PorterStemmer
-from collections import Counter
+from itertools import product, chain
 
-#nltk.download('punkt')
-#nltk.download('stopwords')
+
+import tracemalloc
+
+""" Global Variables
+"""
+punctuation_tuple = ('!', ',', '?', '.', "'", '"')
+afinn_dictionary = {}
+
 
 class Cell:
     """
@@ -71,10 +74,8 @@ def get_sentiment_dictionary(file):
         dictionary of word (key) and it's related score (value)
     """
 
-    temp = {}
     with open(file) as f:
         for line in f:
-            # print(line)
 
             # this block of code works without assumption
             split_line = line.split()
@@ -85,9 +86,8 @@ def get_sentiment_dictionary(file):
 
             # this code below only works if we assume the text file will be indented by "word" \t "score"
             # (key, val) = line.split('\t', 1)
-            temp[key] = int(val)
+            afinn_dictionary[key] = int(val)
 
-    return temp
 
 
 ### TODO can delete block of code
@@ -106,6 +106,19 @@ def filter_list_of_dict(key, list_of_dict):
     for line in list_of_dict:
         new_list.append(line[key])
     return new_list
+
+
+def get_cells(melb_grid):
+    cells = {}
+
+    for feature in melb_grid['features']:
+        temp_id = feature["properties"]["id"]
+        temp_cell = Cell(feature["properties"]["id"])               # initialise a new cell class
+        temp_array = np.array(feature["geometry"]["coordinates"])  # changes the coordinates to an numpy array
+        temp_cell.polygon = Polygon(temp_array[0])
+        cells[temp_id] = temp_cell
+
+    return cells
 
 
 def get_tweet_cell_location(tweet_location, cells):
@@ -167,8 +180,165 @@ def get_tweet_cell_location(tweet_location, cells):
         return None
 
 
-def get_tweet_sentiment_score(tweet_text, word_dictionary):
-    print(5)
+def word_beginning_with(word):
+    """ Check if the dictionary has any keys starting with the input word
+        e.g. "cool stuff" with "cool" as input for word, then return true
+
+    :param word: str
+        word to search
+    :return: bool
+        true if there is a key which starts with word
+        false if there isn't a key which starts with word
+    """
+    word += " "
+    for key in afinn_dictionary.keys():
+        if key.startswith(word):
+            return True
+    return False
+
+
+def remove_punctuation(word):
+    """ removes the punctuation on the end of the word
+        e.g. "awesome!!" will return "awesome"
+        e.g. "awesome!@" will return "awesome!@"
+        e.g. "awesome@!" will return "awesome@"
+
+    :param word: str
+        word to remove punctuation
+    :return: str
+        returns the edited word
+    """
+    new_word = ""
+    for i in reversed(range(len(word))):
+        if word[i] in punctuation_tuple:
+            word = word[:i]
+        else:
+            break
+    return word
+
+
+def get_tweet_sentiment_score(tweet_text):
+    """ get the tweet sentiment score from the AFINN dictionary
+
+    :param tweet_text: str
+        tweet text
+    :return: int
+        sentiment score of the tweet
+    """
+    split_text = tweet_text.lower().split()
+
+
+
+
+    score = 0
+    temp_score = 0
+    temp_word = ""
+    new_word = ""
+
+    for word in split_text:
+
+        # TODO happy?:-) matches as happy? is a valid substring but happy:-)
+        #  does not fit as : is not a valid punctuation symbol but happy :-) is a
+        # if a word contains the punctuation then it's a match
+        # more examples of matches: good!@
+        # Good!jhkajshkjhads
+        # Good?,mkkwjwh
+        # won can match won't
+        """ when a word ends with one of the punctuation ! , ? ' " the word ends at that point
+            therefore there is no need to check in AFINN with the word following it
+        """
+
+        #   if word.endswith(punctuation_tuple):    #thold code for ends with but richard said it's not right
+
+
+        # check if current word has any punctuation
+        if any(punctuation in punctuation_tuple for punctuation in word):
+
+            # removes all the punctuation of a word from the back
+            word = remove_punctuation(word)
+
+            # if the temp word is not empty try find a match in AFINN
+            if temp_word != "":
+                # check the score of temp word concatenated with current word
+                temp_score = afinn_dictionary.get(temp_word+" "+word, 0)
+
+                if temp_score != 0:
+                    score += temp_score
+                else:
+                    score += afinn_dictionary.get(temp_word, 0)
+                    temp_word = ""
+
+                temp_score = 0
+
+            else:
+                score += afinn_dictionary.get(word, 0)
+
+
+                # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
+                # if word_beginning_with(word):
+                #     try:
+                #         temp_score = afinn_dictionary[word]
+                #     except KeyError:
+                #         None
+                #     finally:
+                #         temp_word += word
+                # else:
+                #     try:
+                #         score += afinn_dictionary[temp_word]
+                #     except KeyError:
+                #         None
+                #     finally:
+                #         temp_word = ""
+                # # split the word into
+                # # also has to check if a word contains 2 words e.g cool!good
+                # # index = words.index(word)
+                # # words.insert(index+1, new_word)
+                # continue
+        else:
+            # check if the temporary word is empty, if not search in AFINN
+            if temp_word != "":
+                temp_word = '%s %s' % (temp_word, word)
+
+                # check if there are any matches beginning with temp word
+                if word_beginning_with(temp_word):
+
+                    temp_score = afinn_dictionary.get(temp_word, 0)
+
+                else:
+
+                    # check if the temporary word is in AFINN, if not get the score of current word
+                    # e.g. temp_word = "cool stuff" returns 3
+                    # e.g. temp_word = "cool corpse" returns -1
+                    if afinn_dictionary.get(temp_word, 0) == 0:
+                        if word_beginning_with(word):
+                            temp_word = word
+                            continue
+                        score += afinn_dictionary.get(word, 0)
+                    else:
+                        score += afinn_dictionary.get(temp_word, 0)
+                        temp_word = ""
+
+                    # using example above, if temp_word = "cool corpse"
+                    # we'll use the stored temp_score for "cool"
+                    if temp_score != 0:
+                        score += temp_score
+                        temp_score = 0
+
+            # if temporary word is empty, then check if there is a match or not
+            else:
+                temp_word += word
+
+                # check if there are any matches beginning with temp word
+                if word_beginning_with(temp_word):
+                    temp_score = afinn_dictionary.get(temp_word, 0)
+
+                else:
+                    score += afinn_dictionary.get(temp_word, 0)
+                    temp_word = ""
+
+    #print(split_text)
+    #print(score)
+    return score
 
 
 def main(argv):
@@ -177,6 +347,8 @@ def main(argv):
     :return:
     """
 
+
+
     # start the timer
     start_time = time.time()
 
@@ -184,20 +356,7 @@ def main(argv):
     my_rank = comm.Get_rank()  # gets the rank of current process
     processors = comm.Get_size()  # how many processors where allocated
 
-    """
-    Block of code below uses broadcasting as a method to read all given  json files
-    then distribute them among all processes, however during testing it was found that 
-    the program runs faster if you read the json file by it self
-    """
-    if my_rank == 0:
-        word_dictionary = get_sentiment_dictionary('AFINN.txt')
-        melb_grid = get_json_object('melbGrid.json')
-    else:
-        word_dictionary = None
-        melb_grid = None
-    word_dictionary = comm.bcast(word_dictionary, root=0)  # get the list of words with a score
-    melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
-
+    tracemalloc.start()
 
     # TODO explain to Babara
     """
@@ -207,113 +366,84 @@ def main(argv):
 
     Take smallTwitter.json and have each process (master/slave) running and processing 
     “parts” of the big file
-    
-    word_dictionary = get_sentiment_dictionary('AFINN.txt')
-    #print (word_dictionary)
-    melb_grid = get_json_object('melbGrid.json')  # get the melbourne grid json object
-
     """
 
     # we can use the following for name convention for our output files
     # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 
-    # scatter the tweet data in chucks
+    """
+        if current rank is 0 (master process)
+        process all the file reading and data transformation
+    """
     if my_rank == 0:
-        # get the input twitter json file
-        tweets = get_json_object(argv[1])
 
-        # only need the tweet data which is stored in the key "rows"
-        tweets = tweets["rows"]
+        melb_grid = get_json_object('melbGrid.json')    # get the melbourne grid json object
+        cells = get_cells(melb_grid)                    # process melbourne grid object into a cell dictionary
 
-        """
-            filters the tweet list to only keep data which we'll be analysing such as 
-            geometry and text properties which is stored in the key 'value'
-            This in term will also save memory (RAM)
-            code taken from https://stackoverflow.com/questions/25148611/how-do-i-extract-all-the-values-of-a-specific-key-from-a-list-of-dictionaries
-        """
-        tweets = [tweets['value'] for tweets in tweets]
+        filepath = argv[1]
 
-        # divide the tweet into chucks to scatter among other processors
-        chunks_of_tweets = [[] for _ in range(processors)]
-        for i, tweet in enumerate(tweets):
-            chunks_of_tweets[i % processors].append(tweet)
+        with open(os.path.realpath(filepath), encoding='utf-8') as json_file:
+            tweets = ijson.items(json_file, 'rows.item.value')
+            chunks_of_tweets = [[] for _ in range(processors)]
+            for i, tweet in enumerate(tweets):
+                chunks_of_tweets[i % processors].append(tweet)
 
     else:
+        cells = None
         tweets = None
         chunks_of_tweets = None
+
+    # cells information of this process (key, object) -> ("A1", cell)
+    # broadcast the cells information to all other processes
+    cells = comm.bcast(cells, root=0)
 
     # scatter the tweet data to save memory for each process therefore processing "parts" of data
     tweets = comm.scatter(chunks_of_tweets, root=0)
 
-    # cells information of this process (key, object) -> ("A1", cell)
-    cells = {}
-    
-    # TODO low prior can make below code a function
-    # will read melbourne grid json and append into cell dictionary
-    for feature in melb_grid['features']:
-        temp_id = feature["properties"]["id"]
-        temp_cell = Cell(feature["properties"]["id"])
-        temp_array = np.array(feature["geometry"]["coordinates"])  # changes the coordinates to an numpy array
-        temp_cell.polygon = Polygon(temp_array[0])
-        cells[temp_id] = temp_cell
+    # initialise the afinn_dictionary global variable
+    get_sentiment_dictionary('AFINN.txt')
 
-
-    """
-    Barbara's code
-    """
-
-    list_texto = []
-    list_id = []
-
-    for i in range(len(tweets)):
-        list_texto.append(tweets[i]['properties']['text'])
-        # list_id.append(tweets['rows'][i]['id'])
-
-    data_textos = pd.DataFrame({'texto':list_texto})
-
-    data_textos['texto'] = data_textos['texto'].str.replace('!','',regex=True).str.replace(',','',regex=True)\
-                      .str.replace('?','',regex=True).str.replace('.','',regex=True).str.replace('"','',regex=True)\
-                      .str.replace('"','',regex=True).str.replace("'","",regex=True)
-    print(data_textos['texto'][0])
-    # filteredList = [w for w in word_dictionary if not w in data_textos['texto']]
-    filteredList = [w for w in word_dictionary if w in data_textos['texto'][0]]
-    print(filteredList)
-    # print(Counter(filteredList))
-    def get_number_of_elements(list):
-        count = 0
-        for word in list:
-            count += 1
-        return count  
-    print("Number of elements in the list: ", get_number_of_elements(filteredList))
-
-    # print(data_textos.head())
-    """
-    Barbara's code
-    """
-    number_of_tweets = 0
+    # if my_rank == 0:
+    #
+    #     filepath = argv[1]
+    #
+    #     with open(os.path.realpath(filepath), encoding='utf-8') as json_file:
+    #
+    #         tweets = ijson.items(json_file, 'rows.item.value')
+    #         for tweet in tweets:
+    #             for proc_id in range(processors):
+    #                 comm.send(tweet, dest=proc_id)
+    #
+    # else:
+    #     tweet = comm.recv(source=0)
+    #
+    #
+    # for proc_id in range(processors):
 
     for tweet in tweets:
+
         # get cell id in which the tweet occurred
         tweet_location = Point(tweet['geometry']['coordinates'])
         cell_id = get_tweet_cell_location(tweet_location, cells)
+
         if cell_id is None:
             continue
+
         cells[cell_id].num_tweet += 1
 
-        # TODO
-        # return sentiment score
-        #tweet_text = tweet['value']['properties']['text']
-  
+        tweet_text = tweet['properties']['text']
+
+        score = get_tweet_sentiment_score(tweet_text)
+        cells[cell_id].sentiment_score += score
 
     if my_rank != 0:
-
         comm.send(cells, dest=0)
     else:
 
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
-            # TODO less prior to make the below code a function
-            # the block of code below will add all the returned vale from other process
+
+            # combine the data from other processes
             for cell in cell_info:
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
@@ -321,17 +451,22 @@ def main(argv):
         # TODO less prior, to make the below code a function
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script
+        # TODO we can also change the printing using a grid or something
         with open("result.txt", "w") as text_file:
             print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
             for cell in cells:
-                print(cells[cell].id, "\t\t", cells[cell].num_tweet, "\t\t",
-                      cells[cell].sentiment_score, file=text_file)
+                print("%s \t\t %d \t\t %d" %(cells[cell].id,
+                    cells[cell].num_tweet, cells[cell].sentiment_score), file=text_file)
 
             time_taken = time.time() - start_time
-            print("time taken for this script to run with %s Processors --- %s seconds ---"
+            print("time taken for this script to run with %d Processors --- %f seconds ---"
                   % (processors, time_taken), file=text_file)
-            print("time taken for this script to run with %s Processors --- %s seconds ---"
+            print("time taken for this script to run with %d Processors --- %f seconds ---"
                   % (processors, time_taken))
+
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Current process {my_rank} Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB")
+    tracemalloc.stop()
 
 
 if __name__ == '__main__':

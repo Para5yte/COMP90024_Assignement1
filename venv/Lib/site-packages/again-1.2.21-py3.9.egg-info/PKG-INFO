@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: again
+Version: 1.2.21
+Summary: Python decorators for type and value checking at runtime. Also, some boilerplate code for making classes that support event registration and firing.
+Home-page: https://github.com/kashifrazzaqui/again
+Author: Kashif Razzaqui
+Author-email: kashif.razzaqui@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
