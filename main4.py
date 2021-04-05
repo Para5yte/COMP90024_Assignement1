@@ -409,11 +409,6 @@ def main(argv):
 
         twitter_filepath = argv[1]
 
-        # with open(os.path.realpath(twitter_filepath), encoding='utf-8') as json_file:
-        #     tweets = ijson.items(json_file, 'rows.item.value')
-        #     chunks_of_tweets = [[] for _ in range(processors)]
-        #     for i, tweet in enumerate(tweets):
-        #         chunks_of_tweets[i % processors].append(tweet)
     else:
         cells = None
         afinn_dictionary = None
@@ -424,10 +419,6 @@ def main(argv):
     # cells information of this process (key, object) -> ("A1", cell)
     # broadcast the cells information to all other processes
     cells = comm.bcast(cells, root=0)
-
-    # scatter the tweet data to save memory for each process therefore processing "parts" of data
-    # tweets = comm.scatter(chunks_of_tweets, root=0)
-
 
     twitter_filepath = argv[1]
     with open(os.path.realpath(twitter_filepath), encoding='utf-8') as json_file:

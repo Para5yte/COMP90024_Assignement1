@@ -401,23 +401,6 @@ def main(argv):
     # initialise the afinn_dictionary global variable
     get_sentiment_dictionary('AFINN.txt')
 
-    # if my_rank == 0:
-    #
-    #     filepath = argv[1]
-    #
-    #     with open(os.path.realpath(filepath), encoding='utf-8') as json_file:
-    #
-    #         tweets = ijson.items(json_file, 'rows.item.value')
-    #         for tweet in tweets:
-    #             for proc_id in range(processors):
-    #                 comm.send(tweet, dest=proc_id)
-    #
-    # else:
-    #     tweet = comm.recv(source=0)
-    #
-    #
-    # for proc_id in range(processors):
-
     for tweet in tweets:
 
         # get cell id in which the tweet occurred
