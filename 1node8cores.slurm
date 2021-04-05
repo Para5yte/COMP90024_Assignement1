@@ -5,6 +5,7 @@
 #SBATCH --partition=snowy
 #SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=8
+#SBATCH --mem=20G
 #SBATCH --time=48:00:00
 
 #SBATCH -o slurm.%N.%j.out # STDOUT
