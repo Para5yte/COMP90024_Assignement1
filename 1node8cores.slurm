@@ -15,7 +15,8 @@
 module load foss/2020b
 module load gcc/8.3.0
 module load python/3.7.4
-pip install --user shapely
+module load numpy/1.18.0-python-3.7.4
+pip install --user ijson
 
 # launch python code
 srun -n 8 python3 main2.py "smallTwitter.json"
