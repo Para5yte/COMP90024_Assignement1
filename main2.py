@@ -287,8 +287,7 @@ def get_tweet_sentiment_score(tweet_text):
         else:
             # check if the temporary word is empty, if not search in AFINN
             if temp_word != "":
-
-                temp_word += " " + word
+                temp_word = '%s %s' % (temp_word, word)
 
                 # check if there are any matches beginning with temp word
                 if word_beginning_with(temp_word):
@@ -439,13 +438,13 @@ def main(argv):
         with open("result.txt", "w") as text_file:
             print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
             for cell in cells:
-                print(cells[cell].id, "\t\t", cells[cell].num_tweet, "\t\t",
-                      cells[cell].sentiment_score, file=text_file)
+                print("%s \t\t %d \t\t %d" %(cells[cell].id,
+                    cells[cell].num_tweet, cells[cell].sentiment_score), file=text_file)
 
             time_taken = time.time() - start_time
-            print("time taken for this script to run with %s Processors --- %s seconds ---"
+            print("time taken for this script to run with %d Processors --- %d seconds ---"
                   % (processors, time_taken), file=text_file)
-            print("time taken for this script to run with %s Processors --- %s seconds ---"
+            print("time taken for this script to run with %d Processors --- %d seconds ---"
                   % (processors, time_taken))
 
 
