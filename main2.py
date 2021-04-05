@@ -3,6 +3,8 @@
 # Barbara Montt    1017615
 
 import json
+import tracemalloc
+
 import numpy as np
 import time
 import os
@@ -114,6 +116,7 @@ def get_cells(melb_grid):
 
     return cells
 
+
 def get_tweet_cell_location(tweet_location, cells):
     """ get the cell id of the location where the tweet occurred
 
@@ -220,6 +223,9 @@ def get_tweet_sentiment_score(tweet_text):
     """
     split_text = tweet_text.lower().split()
 
+
+
+
     score = 0
     temp_score = 0
     temp_word = ""
@@ -305,7 +311,6 @@ def get_tweet_sentiment_score(tweet_text):
                             continue
                         score += afinn_dictionary.get(word, 0)
                     else:
-                        print(temp_word, afinn_dictionary.get(temp_word, 0))
                         score += afinn_dictionary.get(temp_word, 0)
                         temp_word = ""
 
@@ -338,12 +343,16 @@ def main(argv):
     :return:
     """
 
+
+
     # start the timer
     start_time = time.time()
 
     comm = MPI.COMM_WORLD  # initialise MPI
     my_rank = comm.Get_rank()  # gets the rank of current process
     processors = comm.Get_size()  # how many processors where allocated
+
+    tracemalloc.start()
 
     # TODO explain to Babara
     """
@@ -442,10 +451,14 @@ def main(argv):
                     cells[cell].num_tweet, cells[cell].sentiment_score), file=text_file)
 
             time_taken = time.time() - start_time
-            print("time taken for this script to run with %d Processors --- %d seconds ---"
+            print("time taken for this script to run with %d Processors --- %f seconds ---"
                   % (processors, time_taken), file=text_file)
-            print("time taken for this script to run with %d Processors --- %d seconds ---"
+            print("time taken for this script to run with %d Processors --- %f seconds ---"
                   % (processors, time_taken))
+
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Current process {my_rank} Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB")
+    tracemalloc.stop()
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@
 #SBATCH --time=48:00:00
 
 # load required modules
-module load foss/2019b
+module load foss/2020b
 module load python/3.7.4
 module load numpy/1.18.0-python-3.7.4
 pip install --user shapely
