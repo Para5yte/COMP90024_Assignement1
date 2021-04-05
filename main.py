@@ -347,8 +347,6 @@ def main(argv):
     :return:
     """
 
-
-
     # start the timer
     start_time = time.time()
 

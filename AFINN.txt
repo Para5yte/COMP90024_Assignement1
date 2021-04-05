@@ -2474,4 +2474,4 @@ yucky	-2
 yummy	3
 zealot	-2
 zealots	-2
-zealous yes 2
+zealous	2
