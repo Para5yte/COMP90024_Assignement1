@@ -5,7 +5,7 @@
 #SBATCH --partition=snowy
 #SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=8
-#SBATCH --time=12:00:00
+#SBATCH --time=48:00:00
 
 #SBATCH -o slurm.%N.%j.out # STDOUT
 #SBATCH -e slurm.%N.%j.err # STDERR

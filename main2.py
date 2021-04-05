@@ -102,6 +102,18 @@ def filter_list_of_dict(key, list_of_dict):
     return new_list
 
 
+def get_cells(melb_grid):
+    cells = {}
+
+    for feature in melb_grid['features']:
+        temp_id = feature["properties"]["id"]
+        temp_cell = Cell(feature["properties"]["id"])               # initialise a new cell class
+        temp_array = np.array(feature["geometry"]["coordinates"])  # changes the coordinates to an numpy array
+        temp_cell.polygon = Polygon(temp_array[0])
+        cells[temp_id] = temp_cell
+
+    return cells
+
 def get_tweet_cell_location(tweet_location, cells):
     """ get the cell id of the location where the tweet occurred
 
@@ -316,8 +328,8 @@ def get_tweet_sentiment_score(tweet_text):
                     score += afinn_dictionary.get(temp_word, 0)
                     temp_word = ""
 
-    print(split_text)
-    print(score)
+    #print(split_text)
+    #print(score)
     return score
 
 
@@ -334,19 +346,6 @@ def main(argv):
     my_rank = comm.Get_rank()  # gets the rank of current process
     processors = comm.Get_size()  # how many processors where allocated
 
-    """
-    Block of code below uses broadcasting as a method to read all given json files
-    then distribute them among all processes
-    """
-    if my_rank == 0:
-        melb_grid = get_json_object('melbGrid.json')
-    else:
-        melb_grid = None
-    melb_grid = comm.bcast(melb_grid, root=0)  # get the melbourne grid json object
-
-    # initialise the afinn_dictionary global variable
-    get_sentiment_dictionary('AFINN.txt')
-
     # TODO explain to Babara
     """
     As Richard quoted
@@ -360,8 +359,15 @@ def main(argv):
     # we can use the following for name convention for our output files
     # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 
-    # scatter the tweet data in chucks
+    """
+        if current rank is 0 (master process)
+        process all the file reading and data transformation
+    """
     if my_rank == 0:
+
+        melb_grid = get_json_object('melbGrid.json')    # get the melbourne grid json object
+        cells = get_cells(melb_grid)                    # process melbourne grid object into a cell dictionary
+
         # get the input twitter json file
         tweets = get_json_object(argv[1])
 
@@ -384,25 +390,19 @@ def main(argv):
             chunks_of_tweets[i % processors].append(tweet)
 
     else:
+        cells = None
         tweets = None
         chunks_of_tweets = None
+
+    # cells information of this process (key, object) -> ("A1", cell)
+    # broadcast the cells information to all other processes
+    cells = comm.bcast(cells, root=0)
 
     # scatter the tweet data to save memory for each process therefore processing "parts" of data
     tweets = comm.scatter(chunks_of_tweets, root=0)
 
-    # cells information of this process (key, object) -> ("A1", cell)
-    cells = {}
-    
-    # TODO low prior can make below code a function
-    # will read melbourne grid json and append into cell dictionary
-    for feature in melb_grid['features']:
-        temp_id = feature["properties"]["id"]
-        temp_cell = Cell(feature["properties"]["id"])
-        temp_array = np.array(feature["geometry"]["coordinates"])  # changes the coordinates to an numpy array
-        temp_cell.polygon = Polygon(temp_array[0])
-        cells[temp_id] = temp_cell
-
-    number_of_tweets = 0
+    # initialise the afinn_dictionary global variable
+    get_sentiment_dictionary('AFINN.txt')
 
     for tweet in tweets:
 

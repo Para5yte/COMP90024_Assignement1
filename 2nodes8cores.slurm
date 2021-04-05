@@ -5,7 +5,7 @@
 #SBATCH --partition=snowy
 #SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=4
-#SBATCH --time=12:00:00
+#SBATCH --time=48:00:00
 
 # load required modules
 module load foss/2019b
