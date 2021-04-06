@@ -421,7 +421,7 @@ def main(argv):
     cells = comm.bcast(cells, root=0)
 
     twitter_filepath = argv[1]
-    tweets = None
+
     with open(os.path.realpath(twitter_filepath), encoding='utf-8') as json_file:
         tweets = ijson.items(json_file, 'rows.item.value')
 

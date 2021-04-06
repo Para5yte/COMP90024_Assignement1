@@ -424,18 +424,25 @@ def main(argv):
 
     twitter_filepath = argv[1]
 
-    with open(twitter_filepath, mode="r", encoding="utf8") as file_obj:
+    with open(os.path.realpath(twitter_filepath), mode="r", encoding="utf8") as file_obj:
+        # open the file has a mmap (memory
         twitter_mmap = mmap.mmap(file_obj.fileno(), 0, access=mmap.ACCESS_READ)
 
         for index, tweet in enumerate(iter(twitter_mmap.readline, b'')):
-            if index % processors != 0:
+            if index % processors != my_rank:
                 continue
 
+            # reconstruct the json line
+            # assumption made, twitters.json lines particularly lines which include tweets end with with ',\r\n'
+            # the last line of a twitter.json file can end with ']}\r\n' as seen in tinyTwitter.json
             tweet = re.sub('(]}|,)\r\n', '', tweet.decode())
 
+            # validate the json line
+            # for the first row of the twitter files and sometimes the last row
             try:
                 tweet = json.loads(tweet)
             except json.decoder.JSONDecodeError:
+                print(tweet)
                 continue
 
             tweet = tweet['value']
