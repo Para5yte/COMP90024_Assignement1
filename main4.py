@@ -12,7 +12,7 @@ import ijson
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
-from itertools import product, chain
+from itertools import islice
 
 import tracemalloc
 
@@ -74,20 +74,20 @@ def get_sentiment_dictionary(file_path):
 
     dictionary = {}
 
-    with open(os.path.realpath(file_path)) as f:
-        for line in f:
+    with open(os.path.realpath(file_path)) as file:
+        for line in file:
 
-            # this block of code works without assumption
-            # split_line = line.split()
-            # if len(split_line) > 2:
-            #     (key, val) = (" ".join(split_line[:len(split_line) - 1]), split_line[-1])
-            # else:
-            #     (key, val) = split_line
+                # this block of code works without assumption
+                # split_line = line.split()
+                # if len(split_line) > 2:
+                #     (key, val) = (" ".join(split_line[:len(split_line) - 1]), split_line[-1])
+                # else:
+                #     (key, val) = split_line
 
-            # assume the text file will be indented by "word" \t "score"
-            (key, val) = line.split('\t', 1)
+                # assume the text file will be indented by "word" \t "score"
+                (key, val) = line.split('\t', 1)
 
-            dictionary[key] = int(val)
+                dictionary[key] = int(val)
 
     return dictionary
 
@@ -421,12 +421,15 @@ def main(argv):
     cells = comm.bcast(cells, root=0)
 
     twitter_filepath = argv[1]
+    tweets = None
     with open(os.path.realpath(twitter_filepath), encoding='utf-8') as json_file:
         tweets = ijson.items(json_file, 'rows.item.value')
 
-        for i, tweet in enumerate(tweets):
-            if i % processors != my_rank:
-                continue
+        for tweet in islice(tweets, my_rank, None, processors):
+            # print(tweet)
+        # for i, tweet in enumerate(tweets):
+        #     if i % processors != my_rank:
+        #         continue
 
             # get cell id in which the tweet occurred
             tweet_location = Point(tweet['geometry']['coordinates'])
@@ -438,7 +441,6 @@ def main(argv):
             cells[cell_id].num_tweet += 1
 
             tweet_text = tweet['properties']['text']
-
             score = get_tweet_sentiment_score(tweet_text, afinn_dictionary)
             cells[cell_id].sentiment_score += score
 

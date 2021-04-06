@@ -1,18 +1,18 @@
 Cell	 #Total Tweets	 #Overal Sentiment Score
-A1 		 2752 		 756
-A2 		 4904 		 4124
-A3 		 5824 		 2691
-A4 		 381 		 55
-B1 		 21232 		 11738
-B2 		 107386 		 32071
-B3 		 34494 		 20206
-B4 		 6643 		 5753
-C1 		 10643 		 7688
-C2 		 246925 		 191878
-C3 		 69901 		 41408
-C4 		 26097 		 19584
-C5 		 5581 		 2656
-D3 		 16318 		 7966
-D4 		 16666 		 9537
-D5 		 4705 		 3785
-time taken for this script to run with 8 Processors --- 1229.675341 seconds ---
+A1 		 0 		 0
+A2 		 0 		 0
+A3 		 0 		 0
+A4 		 0 		 0
+B1 		 0 		 0
+B2 		 0 		 0
+B3 		 0 		 0
+B4 		 0 		 0
+C1 		 0 		 0
+C2 		 9746 		 9732
+C3 		 0 		 0
+C4 		 0 		 0
+C5 		 0 		 0
+D3 		 0 		 0
+D4 		 0 		 0
+D5 		 0 		 0
+time taken for this script to run with 8 Processors --- 17.170037 seconds ---
