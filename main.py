@@ -463,7 +463,6 @@ def main(argv):
     if my_rank != 0:
         comm.send(cells, dest=0)
     else:
-
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
 
