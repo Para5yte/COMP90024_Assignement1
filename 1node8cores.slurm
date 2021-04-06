@@ -18,4 +18,4 @@ module load numpy/1.18.0-python-3.7.4
 pip install --user ijson
 
 # launch python code
-srun -n 8 python3 main4.py "bigTwitter.json"
+srun -n 8 python3 main.py "bigTwitter.json"
