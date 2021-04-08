@@ -399,9 +399,7 @@ def main(argv):
             # reconstruct the json line
             # assumption made, twitters.json lines particularly lines which include tweets end with with ',\r\n'
             # the last line of a twitter.json file can end with ']}\r\n' as seen in tinyTwitter.json
-            tweet = re.sub('(]}|,)\r\n', '', tweet.decode())
-
-            print(tweet)
+            tweet = re.sub('(]}|,)(\n|\r\n)', '', tweet.decode())
 
             # validate the json line
             # for the first row of the twitter files and sometimes the last row

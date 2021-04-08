@@ -15,4 +15,4 @@ C5 		 0 		 0
 D3 		 1 		 0
 D4 		 2 		 7
 D5 		 1 		 0
-time taken for this script to run --- 0.130986 seconds ---
+time taken for this script to run --- 0.146411 seconds ---
