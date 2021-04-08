@@ -14,8 +14,6 @@ from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
 
-import tracemalloc
-
 """ Global Variables
 """
 punctuation_tuple = ('!', ',', '?', '.', "'", '"')
@@ -95,6 +93,13 @@ def get_sentiment_dictionary(file_path):
 
 
 def get_cells(melb_grid):
+    """     create a cells dictionary {cell_id : cell_class}
+
+    :param melb_grid: jsonObject
+        melbourne grid json object
+    :return: {}
+        returns the cells dictionary
+    """
     cells = {}
 
     for feature in melb_grid['features']:
@@ -259,26 +264,26 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                 score += afinn_dictionary.get(word, 0)
 
 
-                # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
-                # if word_beginning_with(word):
-                #     try:
-                #         temp_score = afinn_dictionary[word]
-                #     except KeyError:
-                #         None
-                #     finally:
-                #         temp_word += word
-                # else:
-                #     try:
-                #         score += afinn_dictionary[temp_word]
-                #     except KeyError:
-                #         None
-                #     finally:
-                #         temp_word = ""
-                # # split the word into
-                # # also has to check if a word contains 2 words e.g cool!good
-                # # index = words.index(word)
-                # # words.insert(index+1, new_word)
-                # continue
+            # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
+            # if word_beginning_with(word):
+            #     try:
+            #         temp_score = afinn_dictionary[word]
+            #     except KeyError:
+            #         None
+            #     finally:
+            #         temp_word += word
+            # else:
+            #     try:
+            #         score += afinn_dictionary[temp_word]
+            #     except KeyError:
+            #         None
+            #     finally:
+            #         temp_word = ""
+            # # split the word into
+            # # also has to check if a word contains 2 words e.g cool!good
+            # # index = words.index(word)
+            # # words.insert(index+1, new_word)
+            # continue
         else:
             # check if the temporary word is empty, if not search in AFINN
             if temp_word != "":
@@ -286,7 +291,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
 
                 # check if there are any matches beginning with temp word
                 if word_beginning_with(temp_word, afinn_dictionary):
-
                     temp_score = afinn_dictionary.get(temp_word, 0)
 
                 else:
@@ -324,6 +328,29 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
     return score
 
 
+def print_output_file(filename, results_cell, result_time):
+    """ print the results into a file with the name Filename
+
+    :param filename: str
+        output filename
+    :param results_cell: {} (cell_id, cell class)
+         results all of the cells from all processess
+    :param result_time: float
+        time taken for the script to run
+    """
+
+    with open(filename, "w") as text_file:
+        print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
+
+        # TODO we can also change the printing using a grid or something
+        for cell in results_cell:
+            print("%s \t\t %d \t\t %d" % (results_cell[cell].id,
+                results_cell[cell].num_tweet, results_cell[cell].sentiment_score), file=text_file)
+
+        print("time taken for this script to run --- %f seconds ---"
+              % result_time, file=text_file)
+
+
 def main(argv):
     """ main function
 
@@ -336,8 +363,6 @@ def main(argv):
     comm = MPI.COMM_WORLD           # initialise MPI
     my_rank = comm.Get_rank()       # gets the rank of current process
     processors = comm.Get_size()    # how many processors where allocated
-
-    tracemalloc.start()
 
     # we can use the following for name convention for our output files
     # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
@@ -415,25 +440,17 @@ def main(argv):
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
 
-        # TODO less prior, to make the below code a function
+        # get time taken to process twitter file
+        time_taken = time.time() - start_time
+
+        try:
+            results_filename = argv[2]
+        except IndexError:
+            results_filename = "results.txt"
+
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script
-        # TODO we can also change the printing using a grid or something
-        with open("resultBig.txt", "w") as text_file:
-            print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
-            for cell in cells:
-                print("%s \t\t %d \t\t %d" %(cells[cell].id,
-                    cells[cell].num_tweet, cells[cell].sentiment_score), file=text_file)
-
-            time_taken = time.time() - start_time
-            print("time taken for this script to run with %d Processors --- %f seconds ---"
-                  % (processors, time_taken), file=text_file)
-            print("time taken for this script to run with %d Processors --- %f seconds ---"
-                  % (processors, time_taken))
-
-    current, peak = tracemalloc.get_traced_memory()
-    print(f"Current process {my_rank} Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB")
-    tracemalloc.stop()
+        print_output_file(results_filename, cells, time_taken)
 
 
 if __name__ == '__main__':

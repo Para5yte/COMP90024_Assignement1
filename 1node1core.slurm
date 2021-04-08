@@ -17,4 +17,4 @@ module load numpy/1.18.0-python-3.7.4
 pip install --user ujson
 
 # launch python code
-srun -n 1 python3 main.py "smallTwitter.json"
+srun -n 1 python3 main.py "bigTwitter.json" "1node1core_result.txt"
