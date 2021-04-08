@@ -330,7 +330,7 @@ def print_output_file(filename, results_cell, result_time):
     :param filename: str
         output filename
     :param results_cell: {} (cell_id, cell class)
-         results all of the cells from all processess
+         results all of the cells from all processes
     :param result_time: float
         time taken for the script to run
     """
@@ -438,13 +438,6 @@ def main(argv):
 
         # get time taken to process twitter file
         time_taken = time.time() - start_time
-
-        for arg in argv:
-            print(arg)
-
-        for cell in cells:
-            print("%s \t\t %d \t\t %d" % (cells[cell].id,
-                cells[cell].num_tweet, cells[cell].sentiment_score))
 
         try:
             results_filename = argv[2]
