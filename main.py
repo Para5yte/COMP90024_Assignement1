@@ -13,6 +13,7 @@ import sys
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
+from tabulate import tabulate
 
 """ Global Variables
 """
@@ -231,8 +232,8 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
         #  does not fit as : is not a valid punctuation symbol but happy :-) is a
         # if a word contains the punctuation then it's a match
         # more examples of matches: good!@
-        # Good!jhkajshkjhads
-        # Good?,mkkwjwh
+        # good!jhkajshkjhads
+        # good?,mkkwjwh
         # won can match won't
         """ when a word ends with one of the punctuation ! , ? ' " the word ends at that point
             therefore there is no need to check in AFINN with the word following it
@@ -241,22 +242,22 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
         # check if current word has any punctuation
         if any(punctuation in punctuation_tuple for punctuation in word):
 
+            # TODO split the word for cases like cool!cool
             # removes all the punctuation of a word from the back
             word = remove_punctuation(word)
 
             # if the temp word is not empty try find a match in AFINN
             if temp_word != "":
+                temp_word = '%s %s' % (temp_word, word)
                 # check the score of temp word concatenated with current word
-                temp_score = afinn_dictionary.get(temp_word+" "+word, 0)
-
-                if temp_score != 0:
+                if afinn_dictionary.get(temp_word, 0) == 0:
+                    score += afinn_dictionary.get(word, 0)
                     score += temp_score
                 else:
                     score += afinn_dictionary.get(temp_word, 0)
-                    temp_word = ""
 
+                temp_word = ""
                 temp_score = 0
-
             else:
                 score += afinn_dictionary.get(word, 0)
 
@@ -286,28 +287,36 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                 temp_word = '%s %s' % (temp_word, word)
 
                 # check if there are any matches beginning with temp word
+                # e.g. one case fit this is if temp_word = "does not"
                 if word_beginning_with(temp_word, afinn_dictionary):
                     temp_score = afinn_dictionary.get(temp_word, 0)
 
+                # check again if word is a prefix of another match in AFINN
+                # e.g. temp_word = "cool cool", word = "cool"
+                elif word_beginning_with(word, afinn_dictionary):
+                    temp_word = word
+
+                    # using example above, if temp_word = "cool cool"
+                    # we'll use the stored temp_score for "cool"
+                    score += temp_score
+                    temp_score = 0
                 else:
 
                     # check if the temporary word is in AFINN, if not get the score of current word
                     # e.g. temp_word = "cool stuff" returns 3
                     # e.g. temp_word = "cool corpse" returns -1
                     if afinn_dictionary.get(temp_word, 0) == 0:
-                        if word_beginning_with(word, afinn_dictionary):
-                            temp_word = word
-                            continue
                         score += afinn_dictionary.get(word, 0)
+
+                        # using example above, if temp_word = "cool corpse"
+                        # we'll use the stored temp_score for "cool"
+                        score += temp_score
                     else:
                         score += afinn_dictionary.get(temp_word, 0)
-                        temp_word = ""
 
-                    # using example above, if temp_word = "cool corpse"
-                    # we'll use the stored temp_score for "cool"
-                    if temp_score != 0:
-                        score += temp_score
-                        temp_score = 0
+                    # reset values
+                    temp_word = ""
+                    temp_score = 0
 
             # if temporary word is empty, then check if there is a match or not
             else:
@@ -336,13 +345,15 @@ def print_output_file(filename, results_cell, result_time):
     """
 
     with open(filename, "w") as text_file:
-        print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
 
+        table_headers = ["Cell", "#Total Tweets", "#Overal Sentiment Score"]
+        table_rows = []
         # TODO we can also change the printing using a grid or something
         for cell in results_cell:
-            print("%s \t\t %d \t\t %d" % (results_cell[cell].id,
-                results_cell[cell].num_tweet, results_cell[cell].sentiment_score), file=text_file)
+            table_rows.append([results_cell[cell].id, results_cell[cell].num_tweet,
+                            results_cell[cell].sentiment_score])
 
+        print(tabulate(table_rows, table_headers, tablefmt="simple"), file=text_file)
         print("time taken for this script to run --- %f seconds ---"
               % result_time, file=text_file)
 
@@ -359,9 +370,6 @@ def main(argv):
     comm = MPI.COMM_WORLD           # initialise MPI
     my_rank = comm.Get_rank()       # gets the rank of current process
     processors = comm.Get_size()    # how many processors where allocated
-
-    # we can use the following for name convention for our output files
-    # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 
     """
         if current rank is 0 (master process)
@@ -399,6 +407,7 @@ def main(argv):
             # reconstruct the json line
             # assumption made, twitters.json lines particularly lines which include tweets end with with ',\r\n'
             # the last line of a twitter.json file can end with ']}\r\n' as seen in tinyTwitter.json
+            # (\n|\r\n) is for decoding in Unix vs Windows, Unix uses \n and windows uses \r\n
             tweet = re.sub('(]}|,)(\n|\r\n)', '', tweet.decode())
 
             # validate the json line
@@ -425,6 +434,7 @@ def main(argv):
 
         twitter_mmap.close()
 
+    # using Point to Point communication, send cell data from slave process to master process
     if my_rank != 0:
         comm.send(cells, dest=0)
     else:
@@ -436,13 +446,13 @@ def main(argv):
                 cells[cell].num_tweet += cell_info[cell].num_tweet
                 cells[cell].sentiment_score += cell_info[cell].sentiment_score
 
-        # get time taken to process twitter file
-        time_taken = time.time() - start_time
-
         try:
             results_filename = argv[2]
         except IndexError:
             results_filename = "results.txt"
+
+        # get time taken to process twitter file
+        time_taken = time.time() - start_time
 
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script

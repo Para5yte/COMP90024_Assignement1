@@ -12,7 +12,6 @@ module load foss/2020b
 module load gcc/8.3.0
 module load python/3.7.4
 module load numpy/1.18.0-python-3.7.4
-pip install --user ujson
 
 # launch python code
 srun -n 8 python3 main.py "smallTwitter.json" "2nodes8cores_result.txt"
