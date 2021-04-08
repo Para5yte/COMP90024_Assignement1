@@ -13,5 +13,9 @@ module load gcc/8.3.0
 module load python/3.7.4
 module load numpy/1.18.0-python-3.7.4
 
+ln –s /data/projects/COMP90024/smallTwitter.json
+ln -s /data/projects/COMP90024/AFINN.txt
+ln -s /data/projects/COMP90024/melbGrid.json
+
 # launch python code
 srun -n 8 python3 main.py "smallTwitter.json" "2nodes8cores_result.txt"
