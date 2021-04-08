@@ -7,6 +7,6 @@ Twitter tweet analysis script.
 
 This script use MPI for HPC system to analysis tweets.
 
-To use this in a HPC system submit a job using any of the .slurm files
+To use this in an HPC system submit a job using any of the .slurm files
 Command:
 sbatch 1node1core.slurm
