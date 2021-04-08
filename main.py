@@ -363,16 +363,6 @@ def main(argv):
 
     tracemalloc.start()
 
-    # TODO explain to Babara
-    """
-    As Richard quoted
-    The main challenge is to read/process a big file and have 8 processes running in parallel to do this.
-     No single process should read in all of the data into memory
-
-    Take smallTwitter.json and have each process (master/slave) running and processing 
-    “parts” of the big file
-    """
-
     # we can use the following for name convention for our output files
     # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 

@@ -2,17 +2,17 @@
 # Takemitsu Yamanaka 757038
 # Barbara Montt    1017615
 
-import json
+import ujson as json
+import re
+import mmap
 import numpy as np
 import time
 import os
 import sys
-import bigjson
 
 from mpi4py import MPI
 from shapely.geometry import Point, Polygon
 from collections import Counter
-from itertools import product, chain
 
 import tracemalloc
 
@@ -74,20 +74,20 @@ def get_sentiment_dictionary(file_path):
 
     dictionary = {}
 
-    with open(os.path.realpath(file_path)) as f:
-        for line in f:
+    with open(os.path.realpath(file_path)) as file:
+        for line in file:
 
-            # this block of code works without assumption
-            # split_line = line.split()
-            # if len(split_line) > 2:
-            #     (key, val) = (" ".join(split_line[:len(split_line) - 1]), split_line[-1])
-            # else:
-            #     (key, val) = split_line
+                # this block of code works without assumption
+                # split_line = line.split()
+                # if len(split_line) > 2:
+                #     (key, val) = (" ".join(split_line[:len(split_line) - 1]), split_line[-1])
+                # else:
+                #     (key, val) = split_line
 
-            # assume the text file will be indented by "word" \t "score"
-            (key, val) = line.split('\t', 1)
+                # assume the text file will be indented by "word" \t "score"
+                (key, val) = line.split('\t', 1)
 
-            dictionary[key] = int(val)
+                dictionary[key] = int(val)
 
     return dictionary
 
@@ -222,149 +222,16 @@ def remove_punctuation(word):
     return word
 
 
-def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
-    """ get the tweet sentiment score from the AFINN dictionary
-
-    :param tweet_text: str
-        tweet text
-    :param afinn_dictionary:
-        afinn_dictionary
-    :return: int
-        sentiment score of the tweet
-    """
-    split_text = tweet_text.lower().split()
-
-
-
-
+def barby(texto, afinn_dictionary):
     score = 0
-    temp_score = 0
-    temp_word = ""
-    new_word = ""
 
-    for word in split_text:
+    for word in texto.lower().split():
+        # if afinn_dictionary.get(remove_punctuation(word), 0) != 0:
+        #     print(word)
 
-        # TODO happy?:-) matches as happy? is a valid substring but happy:-)
-        #  does not fit as : is not a valid punctuation symbol but happy :-) is a
-        # if a word contains the punctuation then it's a match
-        # more examples of matches: good!@
-        # Good!jhkajshkjhads
-        # Good?,mkkwjwh
-        # won can match won't
-        """ when a word ends with one of the punctuation ! , ? ' " the word ends at that point
-            therefore there is no need to check in AFINN with the word following it
-        """
+        score += afinn_dictionary.get(remove_punctuation(word), 0)
 
-        #   if word.endswith(punctuation_tuple):    #thold code for ends with but richard said it's not right
-
-
-        # check if current word has any punctuation
-        if any(punctuation in punctuation_tuple for punctuation in word):
-
-            # removes all the punctuation of a word from the back
-            word = remove_punctuation(word)
-
-            # if the temp word is not empty try find a match in AFINN
-            if temp_word != "":
-                # check the score of temp word concatenated with current word
-                temp_score = afinn_dictionary.get(temp_word+" "+word, 0)
-
-                if temp_score != 0:
-                    score += temp_score
-                else:
-                    score += afinn_dictionary.get(temp_word, 0)
-                    temp_word = ""
-
-                temp_score = 0
-
-            else:
-                score += afinn_dictionary.get(word, 0)
-
-
-                # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
-                # if word_beginning_with(word):
-                #     try:
-                #         temp_score = afinn_dictionary[word]
-                #     except KeyError:
-                #         None
-                #     finally:
-                #         temp_word += word
-                # else:
-                #     try:
-                #         score += afinn_dictionary[temp_word]
-                #     except KeyError:
-                #         None
-                #     finally:
-                #         temp_word = ""
-                # # split the word into
-                # # also has to check if a word contains 2 words e.g cool!good
-                # # index = words.index(word)
-                # # words.insert(index+1, new_word)
-                # continue
-        else:
-            # check if the temporary word is empty, if not search in AFINN
-            if temp_word != "":
-                temp_word = '%s %s' % (temp_word, word)
-
-                # check if there are any matches beginning with temp word
-                if word_beginning_with(temp_word, afinn_dictionary):
-
-                    temp_score = afinn_dictionary.get(temp_word, 0)
-
-                else:
-
-                    # check if the temporary word is in AFINN, if not get the score of current word
-                    # e.g. temp_word = "cool stuff" returns 3
-                    # e.g. temp_word = "cool corpse" returns -1
-                    if afinn_dictionary.get(temp_word, 0) == 0:
-                        if word_beginning_with(word, afinn_dictionary):
-                            temp_word = word
-                            continue
-                        score += afinn_dictionary.get(word, 0)
-                    else:
-                        score += afinn_dictionary.get(temp_word, 0)
-                        temp_word = ""
-
-                    # using example above, if temp_word = "cool corpse"
-                    # we'll use the stored temp_score for "cool"
-                    if temp_score != 0:
-                        score += temp_score
-                        temp_score = 0
-
-            # if temporary word is empty, then check if there is a match or not
-            else:
-                temp_word += word
-
-                # check if there are any matches beginning with temp word
-                if word_beginning_with(temp_word, afinn_dictionary):
-                    temp_score = afinn_dictionary.get(temp_word, 0)
-
-                else:
-                    score += afinn_dictionary.get(temp_word, 0)
-                    temp_word = ""
-
-    #print(split_text)
-    #print(score)
     return score
-
-def process_tweet(tweet, afinn_dictionary, cells):
-    None
-    return cells
-
-# def gen(file_path):
-#     with open(os.path.realpath(filepath), encoding='utf-8') as json_file:
-#         tweets = ijson.items(json_file, 'rows.item.value')
-#         for i, tweet in enumerate(tweets):
-#             yield
-
-def tweeter_reader(file_name, tweet_index):
-    with open(os.path.realpath(file_name), encoding='utf-8') as json_file:
-        tweets = json.load(json_file)
-
-        tweets = tweets["rows"]
-        tweets = [tweets['value'] for tweets in tweets]
-
-        yield tweets[tweet_index]
 
 
 def main(argv):
@@ -382,16 +249,6 @@ def main(argv):
 
     tracemalloc.start()
 
-    # TODO explain to Babara
-    """
-    As Richard quoted
-    The main challenge is to read/process a big file and have 8 processes running in parallel to do this.
-     No single process should read in all of the data into memory
-
-    Take smallTwitter.json and have each process (master/slave) running and processing 
-    “parts” of the big file
-    """
-
     # we can use the following for name convention for our output files
     # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 
@@ -407,13 +264,6 @@ def main(argv):
         # process melbourne grid object into a cell dictionary
         cells = get_cells(get_json_object('melbGrid.json'))
 
-        twitter_filepath = argv[1]
-
-        # with open(os.path.realpath(twitter_filepath), encoding='utf-8') as json_file:
-        #     tweets = ijson.items(json_file, 'rows.item.value')
-        #     chunks_of_tweets = [[] for _ in range(processors)]
-        #     for i, tweet in enumerate(tweets):
-        #         chunks_of_tweets[i % processors].append(tweet)
     else:
         cells = None
         afinn_dictionary = None
@@ -425,45 +275,48 @@ def main(argv):
     # broadcast the cells information to all other processes
     cells = comm.bcast(cells, root=0)
 
-    # scatter the tweet data to save memory for each process therefore processing "parts" of data
-    # tweets = comm.scatter(chunks_of_tweets, root=0)
-
-
     twitter_filepath = argv[1]
 
-    with open(os.path.realpath(twitter_filepath), 'rb') as json_file:
-        tweets = bigjson.load(json_file)
+    with open(os.path.realpath(twitter_filepath), mode="r", encoding="utf8") as file_obj:
+        # open the file has a mmap
+        twitter_mmap = mmap.mmap(file_obj.fileno(), 0, access=mmap.ACCESS_READ)
 
-        tweets = tweets["rows"]
+        for index, tweet in enumerate(iter(twitter_mmap.readline, b'')):
+            if index % processors != my_rank:
+                continue
 
-        i = my_rank
-        try:
+            # reconstruct the json line
+            # assumption made, twitters.json lines particularly lines which include tweets end with with ',\r\n'
+            # the last line of a twitter.json file can end with ']}\r\n' as seen in tinyTwitter.json
+            tweet = re.sub('(]}|,)\r\n', '', tweet.decode())
 
-            while IndexError:
+            # validate the json line
+            # for the first row of the twitter files and sometimes the last row
+            try:
+                tweet = json.loads(tweet)
+            except ValueError:
+                continue
 
-                tweet = tweets[i]['value']
+            tweet = tweet['value']
 
-                i += processors
-                # get cell id in which the tweet occurred
-                tweet_location = Point(tweet['geometry']['coordinates'])
-                cell_id = get_tweet_cell_location(tweet_location, cells)
+            # get cell id in which the tweet occurred
+            tweet_location = Point(tweet['geometry']['coordinates'])
+            cell_id = get_tweet_cell_location(tweet_location, cells)
 
-                if cell_id is None:
-                    continue
+            if cell_id is None:
+                continue
 
-                cells[cell_id].num_tweet += 1
+            cells[cell_id].num_tweet += 1
 
-                tweet_text = tweet['properties']['text']
+            tweet_text = tweet['properties']['text']
+            score = barby(tweet_text, afinn_dictionary)
+            cells[cell_id].sentiment_score += score
 
-                score = get_tweet_sentiment_score(tweet_text, afinn_dictionary)
-                cells[cell_id].sentiment_score += score
-        except IndexError:
-            None
+        twitter_mmap.close()
 
     if my_rank != 0:
         comm.send(cells, dest=0)
     else:
-
         for proc_id in range(1, processors):
             cell_info = comm.recv(source=proc_id)
 

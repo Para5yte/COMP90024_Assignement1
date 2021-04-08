@@ -15,4 +15,4 @@ C5 		 0 		 0
 D3 		 0 		 0
 D4 		 0 		 0
 D5 		 0 		 0
-time taken for this script to run with 4 Processors --- 14.733597 seconds ---
+time taken for this script to run with 4 Processors --- 13.354306 seconds ---

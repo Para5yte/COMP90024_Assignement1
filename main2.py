@@ -79,6 +79,15 @@ def get_sentiment_dictionary(file_path):
 
             (key, val) = line.split('\t', 1)
 
+            # preprocess any key with two words and append the Value True to them
+            # e.g. "cool stuff", create new key for "cool " append to True to it
+            # e.g. "does not work", create 2 new key for "does " & "does not " and append True to it
+            if ' ' in key:
+                keys = key.split(' ')
+                for i in range(len(keys)-1):
+                    new_key = keys[i] + ' '
+                    dictionary[new_key] = True
+
             dictionary[key] = int(val)
 
     return dictionary
@@ -187,11 +196,10 @@ def word_beginning_with(word, afinn_dictionary):
         true if there is a key which starts with word
         false if there isn't a key which starts with word
     """
-    word += " "
-    for key in afinn_dictionary.keys():
-        if key.startswith(word):
-            return True
-    return False
+    word += ' '
+
+    return afinn_dictionary.get(word, False)
+
 
 
 def remove_punctuation(word):
