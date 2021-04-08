@@ -199,7 +199,7 @@ def remove_punctuation(word):
     :return: str
         returns the edited word
     """
-    new_word = ""
+
     for i in reversed(range(len(word))):
         if word[i] in punctuation_tuple:
             word = word[:i]
@@ -238,9 +238,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
             therefore there is no need to check in AFINN with the word following it
         """
 
-        #   if word.endswith(punctuation_tuple):    #thold code for ends with but richard said it's not right
-
-
         # check if current word has any punctuation
         if any(punctuation in punctuation_tuple for punctuation in word):
 
@@ -262,7 +259,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
 
             else:
                 score += afinn_dictionary.get(word, 0)
-
 
             # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
             # if word_beginning_with(word):
