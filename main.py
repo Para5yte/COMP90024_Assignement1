@@ -439,6 +439,9 @@ def main(argv):
         # get time taken to process twitter file
         time_taken = time.time() - start_time
 
+        for arg in argv:
+            print(arg)
+
         for cell in cells:
             print("%s \t\t %d \t\t %d" % (cells[cell].id,
                 cells[cell].num_tweet, cells[cell].sentiment_score))
