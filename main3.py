@@ -316,7 +316,7 @@ def main(argv):
         # output the result of the score for each cell and the number tweets in the cell
         # with the time taken to run the script
         # TODO we can also change the printing using a grid or something
-        with open("result.txt", "w") as text_file:
+        with open("resultBig.txt", "w") as text_file:
             print("Cell\t #Total Tweets\t #Overal Sentiment Score", file=text_file)
             for cell in cells:
                 print(cells[cell].id, "\t\t", cells[cell].num_tweet, "\t\t",
