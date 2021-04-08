@@ -7,9 +7,6 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --time=48:00:00
 
-#SBATCH -o slurm.%N.%j.out # STDOUT
-#SBATCH -e slurm.%N.%j.err # STDERR
-
 # load required modules
 module load foss/2020b
 module load gcc/8.3.0
