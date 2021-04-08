@@ -401,6 +401,8 @@ def main(argv):
             # the last line of a twitter.json file can end with ']}\r\n' as seen in tinyTwitter.json
             tweet = re.sub('(]}|,)\r\n', '', tweet.decode())
 
+            print(tweet)
+
             # validate the json line
             # for the first row of the twitter files and sometimes the last row
             try:
