@@ -438,6 +438,7 @@ def main(argv):
 
         # get time taken to process twitter file
         time_taken = time.time() - start_time
+        print(cells)
 
         try:
             results_filename = argv[2]
