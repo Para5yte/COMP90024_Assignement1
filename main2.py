@@ -93,24 +93,6 @@ def get_sentiment_dictionary(file_path):
     return dictionary
 
 
-### TODO can delete block of code
-def filter_list_of_dict(key, list_of_dict):
-    """ Filters a list of dict only keeping the given key of each line
-
-    :param key: str
-        key to filter by
-    :param list_of_dict:[]
-        list of dictionary
-
-    :return: []
-        returns the new list which only keeps the key
-    """
-    new_list = []
-    for line in list_of_dict:
-        new_list.append(line[key])
-    return new_list
-
-
 def get_cells(melb_grid):
     cells = {}
 
@@ -199,7 +181,6 @@ def word_beginning_with(word, afinn_dictionary):
     word += ' '
 
     return afinn_dictionary.get(word, False)
-
 
 
 def remove_punctuation(word):
@@ -340,8 +321,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                     score += afinn_dictionary.get(temp_word, 0)
                     temp_word = ""
 
-    #print(split_text)
-    #print(score)
     return score
 
 

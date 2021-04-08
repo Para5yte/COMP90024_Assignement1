@@ -77,38 +77,21 @@ def get_sentiment_dictionary(file_path):
     with open(os.path.realpath(file_path)) as file:
         for line in file:
 
-                # this block of code works without assumption
-                # split_line = line.split()
-                # if len(split_line) > 2:
-                #     (key, val) = (" ".join(split_line[:len(split_line) - 1]), split_line[-1])
-                # else:
-                #     (key, val) = split_line
+            # assume the text file will be indented by "word" \t "score"
+            (key, val) = line.split('\t', 1)
 
-                # assume the text file will be indented by "word" \t "score"
-                (key, val) = line.split('\t', 1)
+            # preprocess any key with two words and append the Value True to them
+            # e.g. "cool stuff", create new key for "cool " append to True to it
+            # e.g. "does not work", create 2 new key for "does " & "does not " and append True to it
+            if ' ' in key:
+                keys = key.split(' ')
+                for i in range(len(keys) - 1):
+                    new_key = keys[i] + ' '
+                    dictionary[new_key] = True
 
-                dictionary[key] = int(val)
+            dictionary[key] = int(val)
 
     return dictionary
-
-
-
-### TODO can delete block of code
-def filter_list_of_dict(key, list_of_dict):
-    """ Filters a list of dict only keeping the given key of each line
-
-    :param key: str
-        key to filter by
-    :param list_of_dict:[]
-        list of dictionary
-
-    :return: []
-        returns the new list which only keeps the key
-    """
-    new_list = []
-    for line in list_of_dict:
-        new_list.append(line[key])
-    return new_list
 
 
 def get_cells(melb_grid):
@@ -195,11 +178,9 @@ def word_beginning_with(word, afinn_dictionary):
         true if there is a key which starts with word
         false if there isn't a key which starts with word
     """
-    word += " "
-    for key in afinn_dictionary.keys():
-        if key.startswith(word):
-            return True
-    return False
+    word += ' '
+
+    return afinn_dictionary.get(word, False)
 
 
 def remove_punctuation(word):
@@ -233,9 +214,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
         sentiment score of the tweet
     """
     split_text = tweet_text.lower().split()
-
-
-
 
     score = 0
     temp_score = 0
@@ -343,8 +321,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                     score += afinn_dictionary.get(temp_word, 0)
                     temp_word = ""
 
-    #print(split_text)
-    #print(score)
     return score
 
 
