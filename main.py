@@ -224,9 +224,10 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
     score = 0
     temp_score = 0
     temp_word = ""
+    empty_str = ''
     new_word = ""
 
-    for word in split_text:
+    for i, word in enumerate(split_text):
 
         # TODO happy?:-) matches as happy? is a valid substring but happy:-)
         #  does not fit as : is not a valid punctuation symbol but happy :-) is a
@@ -242,45 +243,43 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
         # check if current word has any punctuation
         if any(punctuation in punctuation_tuple for punctuation in word):
 
-            # TODO split the word for cases like cool!cool
-            # removes all the punctuation of a word from the back
-            word = remove_punctuation(word)
-
-            # if the temp word is not empty try find a match in AFINN
-            if temp_word != "":
-                temp_word = '%s %s' % (temp_word, word)
-                # check the score of temp word concatenated with current word
-                if afinn_dictionary.get(temp_word, 0) == 0:
-                    score += afinn_dictionary.get(word, 0)
-                    score += temp_score
-                else:
-                    score += afinn_dictionary.get(temp_word, 0)
-
-                temp_word = ""
+            # only for the case where word == can't since afinn has # "can't stand"
+            # assuming no new words are added to the AFINN dict from what this Assignment has given
+            if word == "can't":
+                score += temp_score
+                temp_word = word
                 temp_score = 0
-            else:
-                score += afinn_dictionary.get(word, 0)
+                continue
 
-            # # check for words in afinn starting with word e.g. "can't" afinn includes "can't stand"
-            # if word_beginning_with(word):
-            #     try:
-            #         temp_score = afinn_dictionary[word]
-            #     except KeyError:
-            #         None
-            #     finally:
-            #         temp_word += word
-            # else:
-            #     try:
-            #         score += afinn_dictionary[temp_word]
-            #     except KeyError:
-            #         None
-            #     finally:
-            #         temp_word = ""
-            # # split the word into
-            # # also has to check if a word contains 2 words e.g cool!good
-            # # index = words.index(word)
-            # # words.insert(index+1, new_word)
-            # continue
+            # split the words with any occurrence of punctuation
+            split_word = re.split('([!,?.\'\"])+', word)
+
+            for j, s_word in enumerate(split_word):
+                if s_word == '':
+                    continue
+
+                if any(punctuation in punctuation_tuple for punctuation in s_word):
+                    if j > 0:
+                        new_word = empty_str.join(split_word[j+1:])
+                        split_text.insert(i+1, new_word)
+                        new_word = ''
+                        break
+
+                # if the temp word is not empty try find a match in AFINN
+                if temp_word != "":
+                    temp_word = '%s %s' % (temp_word, word)
+                    # check the score of temp word concatenated with current word
+                    if afinn_dictionary.get(temp_word, 0) == 0:
+                        score += afinn_dictionary.get(word, 0)
+                        score += temp_score
+                    else:
+                        score += afinn_dictionary.get(temp_word, 0)
+
+                    temp_word = ""
+                    temp_score = 0
+                else:
+                    score += afinn_dictionary.get(word, 0)
+
         else:
             # check if the temporary word is empty, if not search in AFINN
             if temp_word != "":
