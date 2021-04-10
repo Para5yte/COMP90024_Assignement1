@@ -9,11 +9,11 @@ B2                    0                          0
 B3                    0                          0
 B4                    0                          0
 C1                    0                          0
-C2                 9746                       9122
-C3                    0                          0
+C2                   14                         30
+C3                    1                          0
 C4                    0                          0
 C5                    0                          0
-D3                    0                          0
-D4                    0                          0
-D5                    0                          0
-time taken for this script to run --- 0.775927 seconds ---
+D3                    1                          0
+D4                    2                          7
+D5                    1                          0
+time taken for this script to run --- 0.014961 seconds ---

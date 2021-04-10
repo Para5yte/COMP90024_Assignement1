@@ -72,6 +72,7 @@ def get_sentiment_dictionary(file_path):
     """
 
     dictionary = {}
+    new_key = ''
 
     with open(os.path.realpath(file_path)) as file:
         for line in file:
@@ -85,9 +86,10 @@ def get_sentiment_dictionary(file_path):
             if ' ' in key:
                 keys = key.split(' ')
                 for i in range(len(keys) - 1):
-                    new_key = keys[i] + ' '
+                    new_key += "%s " % keys[i]
                     dictionary[new_key] = True
 
+            new_key = ''
             dictionary[key] = int(val)
 
     return dictionary
@@ -225,7 +227,7 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
     temp_score = 0
     temp_word = ""
     empty_str = ''
-    new_word = ""
+    new_word = ''
 
     for i, word in enumerate(split_text):
 
@@ -258,6 +260,7 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                 if s_word == '':
                     continue
 
+                # Join the split words together and add it back into the tweet to analysis
                 if any(punctuation in punctuation_tuple for punctuation in s_word):
                     if j > 0:
                         new_word = empty_str.join(split_word[j+1:])
@@ -266,11 +269,12 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                         break
 
                 # if the temp word is not empty try find a match in AFINN
-                if temp_word != "":
-                    temp_word = '%s %s' % (temp_word, word)
+
+                if temp_word != '':
+                    temp_word = '%s %s' % (temp_word, s_word)
                     # check the score of temp word concatenated with current word
                     if afinn_dictionary.get(temp_word, 0) == 0:
-                        score += afinn_dictionary.get(word, 0)
+                        score += afinn_dictionary.get(s_word, 0)
                         score += temp_score
                     else:
                         score += afinn_dictionary.get(temp_word, 0)
@@ -278,7 +282,7 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                     temp_word = ""
                     temp_score = 0
                 else:
-                    score += afinn_dictionary.get(word, 0)
+                    score += afinn_dictionary.get(s_word, 0)
 
         else:
             # check if the temporary word is empty, if not search in AFINN

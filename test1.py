@@ -1,7 +1,7 @@
 import re
 punctuation_tuple = ('!', ',', '?', '.', "'", '"')
 text = "hello there,not won't cool!!!tits cool!@ cool@! !cool !cool!!@cool!cool @cool!cool"
-
+text = "does not work,"
 #text = "cool@! !cool"
 
 split_text = text.lower().split()
