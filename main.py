@@ -191,26 +191,6 @@ def word_beginning_with(word, afinn_dictionary):
     return afinn_dictionary.get(word, False)
 
 
-def remove_punctuation(word):
-    """ removes the punctuation on the end of the word
-        e.g. "awesome!!" will return "awesome"
-        e.g. "awesome!@" will return "awesome!@"
-        e.g. "awesome@!" will return "awesome@"
-
-    :param word: str
-        word to remove punctuation
-    :return: str
-        returns the edited word
-    """
-
-    for i in reversed(range(len(word))):
-        if word[i] in punctuation_tuple:
-            word = word[:i]
-        else:
-            break
-    return word
-
-
 def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
     """ get the tweet sentiment score from the AFINN dictionary
 
@@ -231,13 +211,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
 
     for i, word in enumerate(split_text):
 
-        # TODO happy?:-) matches as happy? is a valid substring but happy:-)
-        #  does not fit as : is not a valid punctuation symbol but happy :-) is a
-        # if a word contains the punctuation then it's a match
-        # more examples of matches: good!@
-        # good!jhkajshkjhads
-        # good?,mkkwjwh
-        # won can match won't
         """ when a word ends with one of the punctuation ! , ? ' " the word ends at that point
             therefore there is no need to check in AFINN with the word following it
         """
@@ -269,7 +242,6 @@ def get_tweet_sentiment_score(tweet_text, afinn_dictionary):
                         break
 
                 # if the temp word is not empty try find a match in AFINN
-
                 if temp_word != '':
                     temp_word = '%s %s' % (temp_word, s_word)
                     # check the score of temp word concatenated with current word
@@ -370,7 +342,7 @@ def main(argv):
     # start the timer
     start_time = time.time()
 
-    comm = MPI.COMM_WORLD           # initialise MPI
+    comm = MPI.COMM_WORLD           # initialise MPI communicator
     my_rank = comm.Get_rank()       # gets the rank of current process
     processors = comm.Get_size()    # how many processors where allocated
 
@@ -380,7 +352,7 @@ def main(argv):
     """
     if my_rank == 0:
 
-        # initialise the afinn_dictionary global variable
+        # process afinn dictionary
         afinn_dictionary = get_sentiment_dictionary('AFINN.txt')
 
         # process melbourne grid object into a cell dictionary
@@ -400,7 +372,7 @@ def main(argv):
     twitter_filepath = argv[1]
 
     with open(os.path.realpath(twitter_filepath), mode="r", encoding="utf8") as file_obj:
-        # open the file has a mmap
+        # open the file as a mmap
         twitter_mmap = mmap.mmap(file_obj.fileno(), 0, access=mmap.ACCESS_READ)
 
         for index, tweet in enumerate(iter(twitter_mmap.readline, b'')):
